@@ -32,4 +32,4 @@ Instance IWorldCore_NatWorld : IWorldCore NatWorld :=
 Instance IWorld_NatWorld : IWorld NatWorld.
 Proof. split; simpl; auto. Qed.
 
-Definition IProp := WProp NatWorld.
+Notation IProp := (WProp NatWorld).
