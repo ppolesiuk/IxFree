@@ -3,6 +3,7 @@
  *)
 Require Import Utf8.
 Require Import IxFree.Base.
+Require Import PeanoNat.
 
 Import PreOrderNotations.
 
@@ -41,7 +42,45 @@ Section Arrow.
   Proof.
     intros [ H ]; apply H, preord_refl.
   Qed.
+
+  #[global] Opaque I_arrow.
 End Arrow.
+
+(* ========================================================================= *)
+(** ** Later *)
+
+Section Later.
+  Context {IWC : IWorldCore W} {WC : IWorld W}.
+  Variables P : WProp W.
+
+  Definition I_later_func (w : W) : Prop :=
+    ∀ w', w ⊑ w' → world_index w' < world_index w → w' ⊨ P.
+
+  Lemma I_later_monotone : monotone I_later_func.
+  Proof.
+    intros w₁ w₂ Hw H w' Hw' Hidx; apply H.
+    + eapply preord_trans; eassumption.
+    + eapply Nat.lt_le_trans; [ eassumption | ].
+      apply world_index_ord; assumption.
+  Qed.
+
+  Definition I_later : WProp W :=
+    {| ma_monotone := I_later_monotone |}.
+
+  Lemma I_later_intro {w : W} :
+    (∀ w', w ⊑ w' → world_index w' < world_index w → w' ⊨ P) → w ⊨ I_later.
+  Proof.
+    intro H; constructor; exact H.
+  Qed.
+
+  Lemma I_later_elim {w w' : W} :
+    w ⊑ w' → world_index w' < world_index w → w ⊨ I_later → w' ⊨ P.
+  Proof.
+    intros Hw Hidx [ H ]; apply H; assumption.
+  Qed.
+
+  #[global] Opaque I_later.
+End Later.
 
 (* ========================================================================= *)
 (** ** Notations *)
@@ -49,4 +88,5 @@ End Arrow.
 End Connectives.
 
 Notation "P →ᵢ Q" := (I_arrow P Q)
-  (at level 99, Q at level 200, right associativity).
+  (at level 90, Q at level 200, right associativity).
+Notation "▷ P" := (I_later P) (at level 30).
