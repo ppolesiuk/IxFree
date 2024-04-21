@@ -14,6 +14,37 @@ Section Connectives.
 Context {W : Type} {PCW : PreOrderCore W} {PW : PreOrder W}.
 
 (* ========================================================================= *)
+(** ** Prop Embedding *)
+
+Section PropEmbedding.
+  Variable P : Prop.
+
+  Definition I_prop_func (w : W) := P.
+
+  Lemma I_prop_monotone : monotone I_prop_func.
+  Proof.
+    intros w₁ w₂ Hw H; exact H.
+  Qed.
+
+  Definition I_prop : WProp W :=
+    {| ma_monotone := I_prop_monotone |}.
+
+  Lemma I_prop_intro {w : W} :
+    P → w ⊨ I_prop.
+  Proof.
+    intro H; constructor; exact H.
+  Qed.
+
+  Lemma I_prop_elim {w : W} :
+    (w ⊨ I_prop) → P.
+  Proof.
+    intros []; assumption.
+  Qed.
+
+  #[global] Opaque I_prop.
+End PropEmbedding.
+
+(* ========================================================================= *)
 (** ** Implication *)
 
 Section Arrow.
@@ -110,6 +141,7 @@ End Later.
 
 End Connectives.
 
+Notation "( P )ᵢ" := (I_prop P).
 Notation "P →ᵢ Q" := (I_arrow P Q)
   (at level 90, Q at level 200, right associativity).
 Notation "▷ P" := (I_later P) (at level 30).

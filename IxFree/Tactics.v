@@ -49,6 +49,23 @@ Local Ltac move_assumptions W Hord :=
   end.
 
 (* ------------------------------------------------------------------------- *)
+(** *** Prop embedding *)
+
+(** Ensures that given term is a proof of embedded proposition. Fails
+  otherwise. *)
+Local Ltac is_iprop H :=
+  let _ := constr:(H : _ ⊨ (_)ᵢ) in idtac.
+
+(** Ensures that the goal is an embedded proposition. On success, it reduces
+  the goal to the form of an embedded proposition, possibly unfolding some
+  definitions. *)
+Local Ltac goal_is_iprop :=
+  refine (_ : _ ⊨ (_)ᵢ).
+
+Local Ltac iintro_iprop :=
+  refine (I_prop_intro _ _).
+
+(* ------------------------------------------------------------------------- *)
 (** *** Implication *)
 
 (** Ensures that given term is a proof of implication. Fails otherwise. *)
@@ -85,6 +102,8 @@ Local Ltac iintro_arrow_named H :=
 Local Ltac is_later H :=
   let _ := constr:(H : _ ⊨ ▷ _) in idtac.
 
+(** Ensures that the goal is a later modality. On success, it reduces the goal
+  to the form of a later modality, possibly unfolding some definitions. *)
 Local Ltac goal_is_later :=
   refine (_ : _ ⊨ ▷ _).
 
@@ -130,7 +149,8 @@ Local Ltac iintro_named H :=
   else fail "cannot introduce".
 
 Local Ltac iintro_anon :=
-  tryif goal_is_arrow then iintro_arrow_anon
+  tryif goal_is_iprop then iintro_iprop
+  else tryif goal_is_arrow then iintro_arrow_anon
   else tryif goal_is_later then iintro_later
   else fail "cannot introduce".
 
@@ -149,7 +169,9 @@ Local Ltac iintros_all :=
 Local Ltac iapply_in_goal H :=
   first
   [ exact H
-  | tryif is_arrow H then
+  | tryif is_iprop H then
+      apply (I_prop_elim _ H)
+    else tryif is_arrow H then
       let H1 := fresh "H" in
       refine ((fun H1 => _) (I_arrow_elim _ _ H _));
       cycle 1; [ | iapply_in_goal H1; clear H1 ]
