@@ -78,6 +78,45 @@ Section Arrow.
 End Arrow.
 
 (* ========================================================================= *)
+(** ** Conjunction *)
+
+Section Conjunction.
+  Variables P Q : WProp W.
+
+  Local Definition I_conj_func (w : W) : Prop :=
+    (w ⊨ P) ∧ (w ⊨ Q).
+
+  Local Lemma I_conj_monotone : monotone I_conj_func.
+  Proof.
+    intros w₁ w₂ Hw [ H1 H2 ].
+    split; eapply I_valid_monotone; eassumption.
+  Qed.
+
+  Definition I_conj : WProp W :=
+    {| ma_monotone := I_conj_monotone |}.
+
+  Lemma I_conj_intro {w : W} :
+    w ⊨ P → w ⊨ Q → w ⊨ I_conj.
+  Proof.
+    intros H1 H2; constructor; split; assumption.
+  Qed.
+
+  Lemma I_conj_elim1 {w : W} :
+    w ⊨ I_conj → w ⊨ P.
+  Proof.
+    intros [ [ H _ ] ]; assumption.
+  Qed.
+
+  Lemma I_conj_elim2 {w : W} :
+    w ⊨ I_conj → w ⊨ Q.
+  Proof.
+    intros [ [ _ H ] ]; assumption.
+  Qed.
+
+  #[global] Opaque I_conj.
+End Conjunction.
+
+(* ========================================================================= *)
 (** ** Universal quantifier *)
 
 Section Forall.
@@ -178,6 +217,7 @@ End Connectives.
 Notation "( P )ᵢ" := (I_prop P).
 Notation "P →ᵢ Q" := (I_arrow P Q)
   (at level 90, Q at level 200, right associativity).
+Notation "P '∧ᵢ' Q" := (I_conj P Q) (at level 80, right associativity).
 Notation "'∀ᵢ' x .. y , P" :=
   (I_forall _ (fun x => .. (I_forall _ (fun y => P)) .. ))
   (at level 200, x binder, y binder, right associativity,

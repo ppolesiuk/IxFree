@@ -96,6 +96,18 @@ Local Ltac iintro_arrow_named H :=
   iintro_arrow_main; intro H.
 
 (* ------------------------------------------------------------------------- *)
+(** *** Conjunction *)
+
+(** Ensures that given term is a proof of conjunction. Fails otherwise. *)
+Local Ltac is_conj H :=
+  let _ := constr:(H : _ ⊨ _ ∧ᵢ _) in idtac.
+
+(** Ensures that the goal is a conjunction. On success, it reduces the goal
+  to the form of a conjunction, possibly unfolding some definitions. *)
+Local Ltac goal_is_conj :=
+  refine (_ : _ ⊨ _ ∧ᵢ _).
+
+(* ------------------------------------------------------------------------- *)
 (** *** Universal quantifier *)
 
 (** Ensures that given term is a proof of universal quantification. Fails
@@ -204,6 +216,11 @@ Local Ltac iapply_in_goal H :=
       let H1 := fresh "H" in
       refine ((fun H1 => _) (I_arrow_elim _ _ H _));
       cycle 1; [ | iapply_in_goal H1; clear H1 ]
+    else tryif is_conj H then
+      first
+      [ iapply_in_goal (I_conj_elim1 _ _ H)
+      | iapply_in_goal (I_conj_elim2 _ _ H)
+      ]
     else tryif is_forall H then
       let H1 := fresh "H" in
       refine ((fun H1 => _) (I_forall_elim _ _ H _));
@@ -268,6 +285,11 @@ Tactic Notation "iintros"
     simple_intropattern(p7) :=
   iintro_pattern p1; iintro_pattern p2; iintro_pattern p3; iintro_pattern p4;
   iintro_pattern p5; iintro_pattern p6; iintro_pattern p7.
+
+(** Splitting conjunction goal into two subgoals. *)
+Ltac isplit :=
+  tryif goal_is_conj then refine (I_conj_intro _ _ _ _)
+  else fail "The goal is not a conjunction".
 
 (** Later can be introduced using [iintro] tactic without any parameters, but
   we also define its specialized version to increase proof readiblity. It
