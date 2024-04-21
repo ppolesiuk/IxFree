@@ -80,6 +80,29 @@ Section Later.
   Qed.
 
   #[global] Opaque I_later.
+
+  Lemma I_later_zero {w : W} :
+    world_index w = 0 → w ⊨ I_later.
+  Proof.
+    intros Hidx; apply I_later_intro; rewrite Hidx.
+    intros w' _ Hlt.
+    inversion Hlt.
+  Qed.
+
+  Lemma I_loeb_induction {w : W} :
+    w ⊨ I_arrow I_later P → w ⊨ P.
+  Proof.
+    assert (LOEB : ∀ n w, world_index w < n → w ⊨ I_arrow I_later P → w ⊨ P).
+    { clear w; intro n; induction n; intros w Hlt H.
+      + inversion Hlt.
+      + apply (I_arrow_elim I_later _ H), I_later_intro.
+        intros w' Hord Hidx; apply IHn.
+        - eapply Nat.lt_le_trans; [ eassumption | ].
+          apply le_S_n, Hlt.
+        - eapply I_valid_monotone; eassumption.
+    }
+    eapply LOEB, le_n.
+  Qed.
 End Later.
 
 (* ========================================================================= *)

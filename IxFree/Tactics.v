@@ -51,17 +51,17 @@ Local Ltac move_assumptions W Hord :=
 (* ------------------------------------------------------------------------- *)
 (** *** Implication *)
 
-(** Fails if given term is not a proof of implication. *)
+(** Ensures that given term is a proof of implication. Fails otherwise. *)
 Local Ltac is_arrow H :=
   let _ := constr:(H : _ ⊨ _ →ᵢ _) in idtac.
 
-(** Fails if the goal is not an implication. On success, it reduces the goal
+(** Ensures that the goal is an implication. On success, it reduces the goal
   to the form of an implication, possibly unfolding some definitions. *)
 Local Ltac goal_is_arrow :=
   refine (_ : _ ⊨ _ →ᵢ _).
 
-(** The main tactic for introducing arrow. It changes the goal of the form
-  [w ⊨ φ →ᵢ ψ] to [w ⊨ φ → w ⊨ ψ]. The new world [w] is a possibly future
+(** The main tactic for introducing arrow. It changes goal of the form
+  [w ⊨ φ →ᵢ ψ] into [w ⊨ φ → w ⊨ ψ]. The new world [w] is a possibly future
   world. *)
 Local Ltac iintro_arrow_main :=
   name_worlds ltac:(fun W_old W_new =>
@@ -79,6 +79,50 @@ Local Ltac iintro_arrow_named H :=
   iintro_arrow_main; intro H.
 
 (* ------------------------------------------------------------------------- *)
+(** *** Later *)
+
+(** Ensures that given term is a proof of later. Fails otherwise. *)
+Local Ltac is_later H :=
+  let _ := constr:(H : _ ⊨ ▷ _) in idtac.
+
+Local Ltac goal_is_later :=
+  refine (_ : _ ⊨ ▷ _).
+
+(** Assuming that [Hord] has type [W ⊑ w'], and [Hidx] has type
+  [world_index w' < world_index w] it changes all assumptions of the
+  form [W ⊨ ▷ φ] into [w' ⊨ φ]. *)
+Local Ltac move_later_assumptions W Hord Hidx :=
+  repeat match goal with
+  | [ H: W ⊨ ▷ ?P |- _ ] =>
+    apply (I_later_elim P Hord Hidx) in H
+  end.
+
+(** Introduce a later. It changes goal of the form [w ⊨ ▷ φ] into [w ⊨ φ],
+  and all assumptions of the form [w ⊨ ▷ ψ] into [w ⊨ ψ]. The new world [w] is
+  always future world. *)
+Local Ltac iintro_later :=
+  name_worlds ltac:(fun W_old W_new =>
+    refine (I_later_intro _ _);
+    let Hord := fresh "Hord" in
+    let Hidx := fresh "Hidx" in
+    intros W_new Hord Hidx;
+    move_later_assumptions W_old Hord Hidx;
+    move_assumptions W_old Hord;
+    try clear W_old Hord Hidx
+  ).
+
+Local Ltac loeb_induction_named IH :=
+  match goal with
+  | [ |- _ ⊨ ?P ] =>
+    apply (I_loeb_induction P);
+    iintro_arrow_named IH
+  end.
+
+Local Ltac loeb_induction_anon :=
+  let IH := fresh "IH" in
+  loeb_induction_named IH.
+
+(* ------------------------------------------------------------------------- *)
 (** *** Introduction rules *)
 
 Local Ltac iintro_named H :=
@@ -87,6 +131,7 @@ Local Ltac iintro_named H :=
 
 Local Ltac iintro_anon :=
   tryif goal_is_arrow then iintro_arrow_anon
+  else tryif goal_is_later then iintro_later
   else fail "cannot introduce".
 
 Local Tactic Notation "iintro_pattern" simple_intropattern(p) :=
@@ -94,7 +139,9 @@ Local Tactic Notation "iintro_pattern" simple_intropattern(p) :=
   else fail "cannot introduce".
 
 Local Ltac iintros_all :=
-  repeat iintro_anon.
+  repeat
+    tryif goal_is_arrow then iintro_arrow_anon
+    else fail.
 
 (* ------------------------------------------------------------------------- *)
 (** *** Elimination rules *)
@@ -113,6 +160,9 @@ Local Ltac iapply_in_goal H :=
 
 (* ========================================================================= *)
 (** ** Introduction rules *)
+
+(** Tactics [iintro] and [iintros] imitates standard [intro] and [intros]
+  tactics. *)
 
 Tactic Notation "iintro" := iintro_anon.
 Tactic Notation "iintro" ident(H) := iintro_named H.
@@ -164,8 +214,27 @@ Tactic Notation "iintros"
   iintro_pattern p1; iintro_pattern p2; iintro_pattern p3; iintro_pattern p4;
   iintro_pattern p5; iintro_pattern p6; iintro_pattern p7.
 
+(** Later can be introduced using [iintro] tactic without any parameters, but
+  we also define its specialized version to increase proof readiblity. It
+  changes goal of the form [w ⊨ ▷ φ] into [w ⊨ φ], and all assumptions of the
+  form [w ⊨ ▷ ψ] into [w ⊨ ψ]. *)
+Ltac later_shift := 
+  tryif goal_is_later then iintro_later
+  else fail "The goal is not of the form ?w ⊨ ▷ ?φ".
+
 (* ========================================================================= *)
 (** ** Elimination rules *)
 
-Tactic Notation "iapply" constr(H) :=
-  iapply_in_goal H.
+(** The [iapply] tactic is similar to standard the [apply] tactic. *)
+Tactic Notation "iapply" constr(H) := iapply_in_goal H.
+
+(* ========================================================================= *)
+(** ** Other tactics *)
+
+(** The key feature of step-indexed logic with later modality is an induction
+over step-indices, called Löb induction. When the goal is [w ⊨ φ], these
+tactics introduces an assumption [w ⊨ ▷ φ]. The name of this assumption can
+be provided as a parameter for [loeb_induction] tactic. If [loeb_induction]
+is used without a name, the default name [IH] is used. *)
+Tactic Notation "loeb_induction" := loeb_induction_anon.
+Tactic Notation "loeb_induction" ident(H) := loeb_induction_named H.
