@@ -96,6 +96,31 @@ Local Ltac iintro_arrow_named H :=
   iintro_arrow_main; intro H.
 
 (* ------------------------------------------------------------------------- *)
+(** *** Universal quantifier *)
+
+(** Ensures that given term is a proof of universal quantification. Fails
+  otherwise. *)
+Local Ltac is_forall H :=
+  let _ := constr:(H : _ ⊨ ∀ᵢ _, _) in idtac.
+
+(** Ensures that the goal is an universal quantification. On success, it
+  reduces the goal to the form of an universal quantification, possibly
+  unfolding some definitions. *)
+Local Ltac goal_is_forall :=
+  refine (_ : _ ⊨ ∀ᵢ _, _).
+
+(** The main tactic for introducing universal quantifier. It changes goal of
+  the form [w ⊨ ∀ᵢ x, φ] into [∀ x, w ⊨ φ]. *)
+Local Ltac iintro_forall_main :=
+  refine (I_forall_intro _ _ _).
+
+Local Ltac iintro_forall_anon :=
+  iintro_forall_main; intro.
+
+Local Ltac iintro_forall_named H :=
+  iintro_forall_main; intro H.
+
+(* ------------------------------------------------------------------------- *)
 (** *** Later *)
 
 (** Ensures that given term is a proof of later. Fails otherwise. *)
@@ -146,21 +171,25 @@ Local Ltac loeb_induction_anon :=
 
 Local Ltac iintro_named H :=
   tryif goal_is_arrow then iintro_arrow_named H
+  else tryif goal_is_forall then iintro_forall_named H
   else fail "cannot introduce".
 
 Local Ltac iintro_anon :=
   tryif goal_is_iprop then iintro_iprop
   else tryif goal_is_arrow then iintro_arrow_anon
+  else tryif goal_is_forall then iintro_forall_anon
   else tryif goal_is_later then iintro_later
   else fail "cannot introduce".
 
 Local Tactic Notation "iintro_pattern" simple_intropattern(p) :=
   tryif goal_is_arrow then iintro_arrow_main; intros p
+  else tryif goal_is_forall then iintro_forall_main; intros p
   else fail "cannot introduce".
 
 Local Ltac iintros_all :=
   repeat
     tryif goal_is_arrow then iintro_arrow_anon
+    else tryif goal_is_forall then iintro_forall_anon
     else fail.
 
 (* ------------------------------------------------------------------------- *)
@@ -175,6 +204,10 @@ Local Ltac iapply_in_goal H :=
       let H1 := fresh "H" in
       refine ((fun H1 => _) (I_arrow_elim _ _ H _));
       cycle 1; [ | iapply_in_goal H1; clear H1 ]
+    else tryif is_forall H then
+      let H1 := fresh "H" in
+      refine ((fun H1 => _) (I_forall_elim _ _ H _));
+      [ iapply_in_goal H1; clear H1 ]
     else fail "cannot apply"
   ].
 
@@ -247,7 +280,7 @@ Ltac later_shift :=
 (* ========================================================================= *)
 (** ** Elimination rules *)
 
-(** The [iapply] tactic is similar to standard the [apply] tactic. *)
+(** The [iapply] tactic is similar to standard the [eapply] tactic. *)
 Tactic Notation "iapply" constr(H) := iapply_in_goal H.
 
 (* ========================================================================= *)

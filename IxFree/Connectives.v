@@ -19,9 +19,9 @@ Context {W : Type} {PCW : PreOrderCore W} {PW : PreOrder W}.
 Section PropEmbedding.
   Variable P : Prop.
 
-  Definition I_prop_func (w : W) := P.
+  Local Definition I_prop_func (w : W) := P.
 
-  Lemma I_prop_monotone : monotone I_prop_func.
+  Local Lemma I_prop_monotone : monotone I_prop_func.
   Proof.
     intros w₁ w₂ Hw H; exact H.
   Qed.
@@ -50,10 +50,10 @@ End PropEmbedding.
 Section Arrow.
   Variables P Q : WProp W.
 
-  Definition I_arrow_func (w : W) : Prop :=
+  Local Definition I_arrow_func (w : W) : Prop :=
     ∀ w', w ⊑ w' → w' ⊨ P → w' ⊨ Q.
 
-  Lemma I_arrow_monotone : monotone I_arrow_func.
+  Local Lemma I_arrow_monotone : monotone I_arrow_func.
   Proof.
     intros w₁ w₂ Hw H w' Hw'; apply H.
     eapply preord_trans; eassumption.
@@ -78,16 +78,50 @@ Section Arrow.
 End Arrow.
 
 (* ========================================================================= *)
+(** ** Universal quantifier *)
+
+Section Forall.
+  Variable A : Type.
+  Variable P : A → WProp W.
+
+  Local Definition I_forall_func (w : W) : Prop :=
+    ∀ x : A, w ⊨ P x.
+
+  Local Lemma I_forall_monotone : monotone I_forall_func.
+  Proof.
+    intros w₁ w₂ Hw H x.
+    eapply I_valid_monotone; [ eassumption | apply H ].
+  Qed.
+
+  Definition I_forall : WProp W :=
+    {| ma_monotone := I_forall_monotone |}.
+
+  Lemma I_forall_intro {w : W} :
+    (∀ x : A, w ⊨ P x) → w ⊨ I_forall.
+  Proof.
+    intros H; constructor; exact H.
+  Qed.
+
+  Lemma I_forall_elim {w : W} :
+    w ⊨ I_forall → ∀ x, w ⊨ P x.
+  Proof.
+    intros [ H ]; exact H.
+  Qed.
+
+  #[global] Opaque I_forall.
+End Forall.
+
+(* ========================================================================= *)
 (** ** Later *)
 
 Section Later.
   Context {IWC : IWorldCore W} {WC : IWorld W}.
   Variables P : WProp W.
 
-  Definition I_later_func (w : W) : Prop :=
+  Local Definition I_later_func (w : W) : Prop :=
     ∀ w', w ⊑ w' → world_index w' < world_index w → w' ⊨ P.
 
-  Lemma I_later_monotone : monotone I_later_func.
+  Local Lemma I_later_monotone : monotone I_later_func.
   Proof.
     intros w₁ w₂ Hw H w' Hw' Hidx; apply H.
     + eapply preord_trans; eassumption.
@@ -144,4 +178,8 @@ End Connectives.
 Notation "( P )ᵢ" := (I_prop P).
 Notation "P →ᵢ Q" := (I_arrow P Q)
   (at level 90, Q at level 200, right associativity).
+Notation "'∀ᵢ' x .. y , P" :=
+  (I_forall _ (fun x => .. (I_forall _ (fun y => P)) .. ))
+  (at level 200, x binder, y binder, right associativity,
+  format "'[ ' '[ ' ∀ᵢ x .. y ']' , '/' P ']'").
 Notation "▷ P" := (I_later P) (at level 30).
