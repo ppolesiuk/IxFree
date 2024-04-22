@@ -108,6 +108,18 @@ Local Ltac goal_is_conj :=
   refine (_ : _ ⊨ _ ∧ᵢ _).
 
 (* ------------------------------------------------------------------------- *)
+(** *** Disjunction *)
+
+(** Ensures that given term is a proof of disjunction. Fails otherwise. *)
+Local Ltac is_disj H :=
+  let _ := constr:(H : _ ⊨ _ ∨ᵢ _) in idtac.
+
+(** Ensures that the goal is a disjunction. On success, it reduces the goal
+  to the form of a disjunction, possibly unfolding some definitions. *)
+Local Ltac goal_is_disj :=
+  refine (_ : _ ⊨ _ ∨ᵢ _).
+
+(* ------------------------------------------------------------------------- *)
 (** *** Universal quantifier *)
 
 (** Ensures that given term is a proof of universal quantification. Fails
@@ -290,6 +302,14 @@ Tactic Notation "iintros"
 Ltac isplit :=
   tryif goal_is_conj then refine (I_conj_intro _ _ _ _)
   else fail "The goal is not a conjunction".
+
+(** Introduction of disjunction *)
+Ltac ileft :=
+  tryif goal_is_disj then refine (I_disj_intro1 _ _ _)
+  else fail "The goal is not a disjunction".
+Ltac iright :=
+  tryif goal_is_disj then refine (I_disj_intro2 _ _ _)
+  else fail "The goal is not a disjunction".
 
 (** Later can be introduced using [iintro] tactic without any parameters, but
   we also define its specialized version to increase proof readiblity. It

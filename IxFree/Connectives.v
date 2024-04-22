@@ -117,6 +117,45 @@ Section Conjunction.
 End Conjunction.
 
 (* ========================================================================= *)
+(** ** Disjunction *)
+
+Section Disjunction.
+  Variables P Q : WProp W.
+
+  Local Definition I_disj_func (w : W) : Prop :=
+    (w ⊨ P) ∨ (w ⊨ Q).
+
+  Local Lemma I_disj_monotone : monotone I_disj_func.
+  Proof.
+    intros w₁ w₂ Hw [ H | H ]; [ left | right ];
+      eapply I_valid_monotone; eassumption.
+  Qed.
+
+  Definition I_disj : WProp W :=
+    {| ma_monotone := I_disj_monotone |}.
+
+  Lemma I_disj_intro1 {w : W} :
+    w ⊨ P → w ⊨ I_disj.
+  Proof.
+    intro H; constructor; left; assumption.
+  Qed.
+
+  Lemma I_disj_intro2 {w : W} :
+    w ⊨ Q → w ⊨ I_disj.
+  Proof.
+    intro H; constructor; right; assumption.
+  Qed.
+
+  Lemma I_disj_elim {w : W} :
+    w ⊨ I_disj → (w ⊨ P) ∨ (w ⊨ Q).
+  Proof.
+    intros [ [ H | H ] ]; [ left | right ]; assumption.
+  Qed.
+
+  #[global] Opaque I_disj.
+End Disjunction.
+
+(* ========================================================================= *)
 (** ** Universal quantifier *)
 
 Section Forall.
@@ -224,6 +263,7 @@ Notation "P →ᵢ Q" := (I_arrow P Q)
   (at level 90, Q at level 200, right associativity).
 Notation "P ↔ᵢ Q" := (I_iff P Q) (at level 95).
 Notation "P '∧ᵢ' Q" := (I_conj P Q) (at level 80, right associativity).
+Notation "P '∨ᵢ' Q" := (I_disj P Q) (at level 85, right associativity).
 Notation "'∀ᵢ' x .. y , P" :=
   (I_forall _ (fun x => .. (I_forall _ (fun y => P)) .. ))
   (at level 200, x binder, y binder, right associativity,
