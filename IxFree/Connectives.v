@@ -210,6 +210,11 @@ Section Later.
 End Later.
 
 (* ========================================================================= *)
+(** ** Iff *)
+
+Definition I_iff P Q := I_conj (I_arrow P Q) (I_arrow Q P).
+
+(* ========================================================================= *)
 (** ** Notations *)
 
 End Connectives.
@@ -217,6 +222,7 @@ End Connectives.
 Notation "( P )ᵢ" := (I_prop P).
 Notation "P →ᵢ Q" := (I_arrow P Q)
   (at level 90, Q at level 200, right associativity).
+Notation "P ↔ᵢ Q" := (I_iff P Q) (at level 95).
 Notation "P '∧ᵢ' Q" := (I_conj P Q) (at level 80, right associativity).
 Notation "'∀ᵢ' x .. y , P" :=
   (I_forall _ (fun x => .. (I_forall _ (fun y => P)) .. ))
