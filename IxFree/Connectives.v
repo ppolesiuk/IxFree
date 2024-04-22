@@ -190,6 +190,40 @@ Section Forall.
 End Forall.
 
 (* ========================================================================= *)
+(** ** Existential quantifier *)
+
+Section Exists.
+  Variable A : Type.
+  Variable P : A → WProp W.
+
+  Local Definition I_exists_func (w : W) : Prop :=
+    ∃ x : A, w ⊨ P x.
+
+  Local Lemma I_exists_monotone : monotone I_exists_func.
+  Proof.
+    intros w₁ w₂ Hw [ x H ]; exists x.
+    eapply I_valid_monotone; [ eassumption | apply H ].
+  Qed.
+
+  Definition I_exists : WProp W :=
+    {| ma_monotone := I_exists_monotone |}.
+
+  Lemma I_exists_intro {w : W} :
+    (∃ x : A, w ⊨ P x) → w ⊨ I_exists.
+  Proof.
+    intros H; constructor; exact H.
+  Qed.
+
+  Lemma I_exists_elim {w : W} :
+    w ⊨ I_exists → ∃ x, w ⊨ P x.
+  Proof.
+    intros [ H ]; exact H.
+  Qed.
+
+  #[global] Opaque I_exists.
+End Exists.
+
+(* ========================================================================= *)
 (** ** Later *)
 
 Section Later.
@@ -268,4 +302,8 @@ Notation "'∀ᵢ' x .. y , P" :=
   (I_forall _ (fun x => .. (I_forall _ (fun y => P)) .. ))
   (at level 200, x binder, y binder, right associativity,
   format "'[ ' '[ ' ∀ᵢ x .. y ']' , '/' P ']'").
+Notation "'∃ᵢ' x .. y , P" :=
+  (I_exists _ (fun x => .. (I_exists _ (fun y => P)) .. ))
+  (at level 200, x binder, y binder, right associativity,
+  format "'[ ' '[ ' ∃ᵢ x .. y ']' , '/' P ']'").
 Notation "▷ P" := (I_later P) (at level 30).
