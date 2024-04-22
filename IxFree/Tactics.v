@@ -65,6 +65,27 @@ Local Ltac goal_is_iprop :=
 Local Ltac iintro_iprop :=
   refine (I_prop_intro _ _).
 
+Local Ltac idestruct_iprop_any H :=
+  tryif is_hyp H then
+    apply I_prop_elim in H
+  else
+    let H1 := fresh "H" in
+    assert (H1 := I_prop_elim _ H).
+
+Local Ltac idestruct_iprop_as H H_new :=
+  tryif is_hyp H then
+    apply I_prop_elim in H;
+    rename H into H_new
+  else
+    assert (H_new := I_prop_elim _ H).
+
+Local Tactic Notation
+    "idestruct_iprop" constr(H) "as" simple_intropattern(p) :=
+  (tryif is_hyp H then
+    apply I_prop_elim in H; revert H
+  else
+    generalize (I_prop_elim _ H)); intros p.
+
 (* ------------------------------------------------------------------------- *)
 (** *** Implication *)
 
@@ -107,6 +128,18 @@ Local Ltac is_conj H :=
 Local Ltac goal_is_conj :=
   refine (_ : _ ⊨ _ ∧ᵢ _).
 
+Local Ltac idestruct_conj_as H H1 H2 :=
+  tryif is_hyp H then
+    apply I_conj_elim in H;
+    destruct H as [ H1 H2 ]
+  else
+    destruct (I_conj_elim _ _ H) as [ H1 H2 ].
+
+Local Ltac idestruct_conj_any H :=
+  let H1 := fresh "H" in
+  let H2 := fresh "H" in
+  idestruct_conj_as H H1 H2.
+
 (* ------------------------------------------------------------------------- *)
 (** *** Disjunction *)
 
@@ -118,6 +151,21 @@ Local Ltac is_disj H :=
   to the form of a disjunction, possibly unfolding some definitions. *)
 Local Ltac goal_is_disj :=
   refine (_ : _ ⊨ _ ∨ᵢ _).
+
+Local Ltac idestruct_disj_as H H1 H2 :=
+  tryif is_hyp H then
+    apply I_disj_elim in H;
+    destruct H as [ H1 | H2 ]
+  else
+    destruct (I_disj_elim _ _ H) as [ H1 | H2 ].
+
+Local Ltac idestruct_disj_any H :=
+  tryif is_hyp H then
+    apply I_disj_elim in H;
+    destruct H as [ H | H ]
+  else
+    let H1 := fresh "H" in
+    destruct (I_disj_elim _ _ H) as [ H1 | H1 ].
 
 (* ------------------------------------------------------------------------- *)
 (** *** Universal quantifier *)
@@ -163,6 +211,21 @@ Local Tactic Notation "iexists_main" uconstr(t) :=
     refine (I_exists_intro _ _ t _)
   else
     fail "The goal is not an existential quantifier".
+
+Local Ltac idestruct_exists_any H :=
+  tryif is_hyp H then
+    apply I_exists_elim in H;
+    destruct H
+  else
+    destruct (I_exists_elim _ _ H).
+
+Local Tactic Notation "idestruct_exists" constr(H) "as"
+    simple_intropattern(p) simple_intropattern(Hr) :=
+  tryif is_hyp H then
+    apply I_exists_elim in H;
+    destruct H as [ p Hr ]
+  else
+    destruct (I_exists_elim _ _ H) as [ p Hr ].
 
 (* ------------------------------------------------------------------------- *)
 (** *** Later *)
@@ -259,6 +322,73 @@ Local Ltac iapply_in_goal H :=
       [ iapply_in_goal H1; clear H1 ]
     else fail "cannot apply"
   ].
+
+Local Ltac prepare_idestruct H ContTac :=
+  tryif first [ is_iprop H | is_conj H | is_disj H | is_exists H ] then
+    ContTac H
+  else tryif is_arrow H then
+    let H1 := fresh "H" in
+    refine ((fun H1 => _) (I_arrow_elim _ _ H _));
+    cycle 1; [ | prepare_idestruct (id H1) ContTac; clear H1 ]
+  else tryif is_forall H then
+    let H1 := fresh "H" in
+    refine ((fun H1 => _) (I_forall_elim _ _ H _));
+    [ prepare_idestruct (id H1) ContTac; clear H1 ]
+  else
+    let T := type of H in
+    fail "cannot destruct " T.
+
+Local Ltac idestruct_simple H :=
+  tryif is_iprop H then
+    idestruct_iprop_any H
+  else tryif is_conj H then
+    idestruct_conj_any H
+  else tryif is_disj H then
+    idestruct_disj_any H
+  else tryif is_exists H then
+    idestruct_exists_any H
+  else
+    let T := type of H in
+    fail "cannot destruct " T.
+
+Local Tactic Notation "idestruct_unary" constr(H) "as"
+    simple_intropattern(p) :=
+  tryif is_iprop H then
+    idestruct_iprop H as p
+  else tryif first [ is_conj H | is_disj H | is_exists H ] then
+    let T := type of H in
+    fail "idestruct on " T " expects two patterns"
+  else
+    let T := type of H in
+    fail "cannot destruct " T.
+
+Local Tactic Notation "idestruct_binary" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) :=
+  tryif is_iprop H then
+    fail "idestruct on (_)ᵢ expects one pattern"
+  else tryif is_conj H then
+    idestruct_conj_as H p1 p2
+  else tryif is_disj H then
+    idestruct_disj_as H p1 p2
+  else tryif is_exists H then
+    idestruct_exists H as p1 p2
+  else
+    let T := type of H in
+    fail "cannot destruct " T.
+
+Local Tactic Notation "idestruct_prefix" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) :=
+  tryif is_iprop H then
+    fail "idestruct on (_)ᵢ expects one pattern"
+  else tryif is_conj H then
+    idestruct_conj_as H p1 p2
+  else tryif is_disj H then
+    fail "idestruct on (_ ∨ᵢ )ᵢ expects two patterns"
+  else tryif is_exists H then
+    idestruct_exists H as p1 p2
+  else
+    let T := type of H in
+    fail "cannot destruct " T.
 
 (* end details *)
 
@@ -373,6 +503,86 @@ Ltac later_shift :=
 
 (** The [iapply] tactic is similar to standard the [eapply] tactic. *)
 Tactic Notation "iapply" constr(H) := iapply_in_goal H.
+
+(** The [idestruct] tactic is similar to standard the [edestruct] tactic.
+  However, due to limitation of Ltac, all intro-patterns are given as separate
+  parameters, and their meaning is right-associated tree. For instance,
+  [idestruct H as x _ [ y z ] H1 H2] should behave similar to
+  [edestruct H as [ x [ _ [ [ y z ] [ H1 H2 ] ] ] ]] or
+  [edestruct H as [ x [ _ [ [ y z ] [ H1 | H2 ] ] ] ]]. Each intro-pattern
+  should be trivial, except patterns for existentially quantified variables
+  ([[ y z ]] in above example). Only the last two patterns can be disjunctive,
+  if the destructed formula is a disjunction. *)
+Tactic Notation "idestruct" constr(H) :=
+  prepare_idestruct H idestruct_simple.
+
+Tactic Notation "idestruct" constr(H) "as" simple_intropattern(p) :=
+  prepare_idestruct H ltac:(fun H1 => idestruct_unary H1 as p).
+
+Tactic Notation "idestruct" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) :=
+  prepare_idestruct H ltac:(fun H1 => idestruct_binary H1 as p1 p2).
+
+Tactic Notation "idestruct" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) simple_intropattern(p3) :=
+  let Ht := fresh "H_temp" in
+  prepare_idestruct H  ltac:(fun H1 => idestruct_prefix H1 as p1 Ht;
+  prepare_idestruct Ht ltac:(fun H2 => idestruct_binary H2 as p2 p3;
+  try clear Ht)).
+
+Tactic Notation "idestruct" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) simple_intropattern(p3)
+    simple_intropattern(p4) :=
+  let Ht1 := fresh "H_temp" in
+  let Ht2 := fresh "H_temp" in
+  prepare_idestruct H   ltac:(fun H1 => idestruct_prefix H1 as p1 Ht1;
+  prepare_idestruct Ht1 ltac:(fun H2 => idestruct_prefix H2 as p2 Ht2;
+  prepare_idestruct Ht2 ltac:(fun H3 => idestruct_binary H3 as p3 p4;
+  try clear Ht1; try clear Ht2))).
+
+Tactic Notation "idestruct" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) simple_intropattern(p3)
+    simple_intropattern(p4) simple_intropattern(p5) :=
+  let Ht1 := fresh "H_temp" in
+  let Ht2 := fresh "H_temp" in
+  let Ht3 := fresh "H_temp" in
+  prepare_idestruct H   ltac:(fun H1 => idestruct_prefix H1 as p1 Ht1;
+  prepare_idestruct Ht1 ltac:(fun H2 => idestruct_prefix H2 as p2 Ht2;
+  prepare_idestruct Ht2 ltac:(fun H3 => idestruct_prefix H3 as p3 Ht3;
+  prepare_idestruct Ht3 ltac:(fun H4 => idestruct_binary H4 as p4 p5;
+  try clear Ht1; try clear Ht2; try clear Ht3)))).
+
+Tactic Notation "idestruct" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) simple_intropattern(p3)
+    simple_intropattern(p4) simple_intropattern(p5) simple_intropattern(p6) :=
+  let Ht1 := fresh "H_temp" in
+  let Ht2 := fresh "H_temp" in
+  let Ht3 := fresh "H_temp" in
+  let Ht4 := fresh "H_temp" in
+  prepare_idestruct H   ltac:(fun H1 => idestruct_prefix H1 as p1 Ht1;
+  prepare_idestruct Ht1 ltac:(fun H2 => idestruct_prefix H2 as p2 Ht2;
+  prepare_idestruct Ht2 ltac:(fun H3 => idestruct_prefix H3 as p3 Ht3;
+  prepare_idestruct Ht3 ltac:(fun H4 => idestruct_prefix H4 as p4 Ht4;
+  prepare_idestruct Ht4 ltac:(fun H5 => idestruct_binary H5 as p5 p6;
+  try clear Ht1; try clear Ht2; try clear Ht3; try clear Ht4))))).
+
+Tactic Notation "idestruct" constr(H) "as"
+    simple_intropattern(p1) simple_intropattern(p2) simple_intropattern(p3)
+    simple_intropattern(p4) simple_intropattern(p5) simple_intropattern(p6)
+    simple_intropattern(p7) :=
+  let Ht1 := fresh "H_temp" in
+  let Ht2 := fresh "H_temp" in
+  let Ht3 := fresh "H_temp" in
+  let Ht4 := fresh "H_temp" in
+  let Ht5 := fresh "H_temp" in
+  prepare_idestruct H   ltac:(fun H1 => idestruct_prefix H1 as p1 Ht1;
+  prepare_idestruct Ht1 ltac:(fun H2 => idestruct_prefix H2 as p2 Ht2;
+  prepare_idestruct Ht2 ltac:(fun H3 => idestruct_prefix H3 as p3 Ht3;
+  prepare_idestruct Ht3 ltac:(fun H4 => idestruct_prefix H4 as p4 Ht4;
+  prepare_idestruct Ht4 ltac:(fun H5 => idestruct_prefix H5 as p5 Ht5;
+  prepare_idestruct Ht5 ltac:(fun H6 => idestruct_binary H6 as p6 p7;
+  try clear Ht1; try clear Ht2; try clear Ht3; try clear Ht4;
+  try clear Ht5)))))).
 
 (* ========================================================================= *)
 (** ** Other tactics *)

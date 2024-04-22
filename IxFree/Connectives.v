@@ -101,19 +101,25 @@ Section Conjunction.
     intros H1 H2; constructor; split; assumption.
   Qed.
 
+  Lemma I_conj_elim {w : W} :
+    w ⊨ I_conj → (w ⊨ P) ∧ (w ⊨ Q).
+  Proof.
+    intros [ [ H1 H2 ] ]; split; assumption.
+  Qed.
+
+  #[global] Opaque I_conj.
+
   Lemma I_conj_elim1 {w : W} :
     w ⊨ I_conj → w ⊨ P.
   Proof.
-    intros [ [ H _ ] ]; assumption.
+    intro; apply I_conj_elim; assumption.
   Qed.
 
   Lemma I_conj_elim2 {w : W} :
     w ⊨ I_conj → w ⊨ Q.
   Proof.
-    intros [ [ _ H ] ]; assumption.
+    intro; apply I_conj_elim; assumption.
   Qed.
-
-  #[global] Opaque I_conj.
 End Conjunction.
 
 (* ========================================================================= *)
