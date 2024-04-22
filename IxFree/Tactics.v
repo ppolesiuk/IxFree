@@ -145,6 +145,26 @@ Local Ltac iintro_forall_named H :=
   iintro_forall_main; intro H.
 
 (* ------------------------------------------------------------------------- *)
+(** *** Existential quantifier *)
+
+(** Ensures that given term is a proof of existential quantification. Fails
+  otherwise. *)
+Local Ltac is_exists H :=
+  let _ := constr:(H : _ ⊨ ∃ᵢ _, _) in idtac.
+
+(** Ensures that the goal is an existential quantification. On success, it
+  reduces the goal to the form of an existential quantification, possibly
+  unfolding some definitions. *)
+Local Ltac goal_is_exists :=
+  refine (_ : _ ⊨ ∃ᵢ _, _).
+
+Local Tactic Notation "iexists_main" uconstr(t) :=
+  tryif goal_is_exists then
+    refine (I_exists_intro _ _ t _)
+  else
+    fail "The goal is not an existential quantifier".
+
+(* ------------------------------------------------------------------------- *)
 (** *** Later *)
 
 (** Ensures that given term is a proof of later. Fails otherwise. *)
@@ -310,6 +330,35 @@ Ltac ileft :=
 Ltac iright :=
   tryif goal_is_disj then refine (I_disj_intro2 _ _ _)
   else fail "The goal is not a disjunction".
+
+(** Introduction of existential quantifier. The [iexists] tactic imitates
+  the standard [eexists] tactic. *)
+Tactic Notation "iexists" := iexists_main _.
+Tactic Notation "iexists"
+    uconstr(t1) :=
+  iexists_main t1.
+Tactic Notation "iexists"
+    uconstr(t1) uconstr(t2) :=
+  iexists_main t1; iexists_main t2.
+Tactic Notation "iexists"
+    uconstr(t1) uconstr(t2) uconstr(t3) :=
+  iexists_main t1; iexists_main t2; iexists_main t3.
+Tactic Notation "iexists"
+    uconstr(t1) uconstr(t2) uconstr(t3) uconstr(t4) :=
+  iexists_main t1; iexists_main t2; iexists_main t3; iexists_main t4.
+Tactic Notation "iexists"
+    uconstr(t1) uconstr(t2) uconstr(t3) uconstr(t4) uconstr(t5) :=
+  iexists_main t1; iexists_main t2; iexists_main t3; iexists_main t4;
+  iexists_main t5.
+Tactic Notation "iexists"
+    uconstr(t1) uconstr(t2) uconstr(t3) uconstr(t4) uconstr(t5) uconstr(t6) :=
+  iexists_main t1; iexists_main t2; iexists_main t3; iexists_main t4;
+  iexists_main t5; iexists_main t6.
+Tactic Notation "iexists"
+    uconstr(t1) uconstr(t2) uconstr(t3) uconstr(t4) uconstr(t5) uconstr(t6)
+    uconstr(t7) :=
+  iexists_main t1; iexists_main t2; iexists_main t3; iexists_main t4;
+  iexists_main t5; iexists_main t6; iexists_main t7.
 
 (** Later can be introduced using [iintro] tactic without any parameters, but
   we also define its specialized version to increase proof readiblity. It

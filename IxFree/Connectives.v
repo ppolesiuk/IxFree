@@ -209,9 +209,9 @@ Section Exists.
     {| ma_monotone := I_exists_monotone |}.
 
   Lemma I_exists_intro {w : W} :
-    (∃ x : A, w ⊨ P x) → w ⊨ I_exists.
+    ∀ x : A, w ⊨ P x → w ⊨ I_exists.
   Proof.
-    intros H; constructor; exact H.
+    intros x H; constructor; exists x; assumption.
   Qed.
 
   Lemma I_exists_elim {w : W} :
