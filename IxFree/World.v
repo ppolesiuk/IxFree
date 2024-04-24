@@ -1,5 +1,32 @@
+(* This file is part of IxFree, released under MIT license.
+ * See LICENSE for details.
+ *)
 Require Import Utf8.
+Require Import IxFree.Base.
 
+(** * Defining worlds, by solving recursive equations on domains *)
+
+(** This modules provides a machinery needed for defining complex step-indexed
+  world, by solving recursive equations on domains. For instance, in a calculus
+  with mutable state, we could define semantic types as monotone functions from
+  worlds to relations on values:
+
+  [ SemType := World -mon→ Value → Prop]
+
+  which is isomorphic to a type [Value → WProp World]. However, worlds
+  describes possible heaps, by providing semantic type for each used location.
+
+  [ World := Loc ↪ ▷SemType ]
+
+  Formally, worlds are partial functions from locations to semantic types,
+  guarded by later (on the level of types, not predicates), because accessing
+  heap require at least one computation step. This definition is recursive,
+  but not positively recursive, so any simple method of solving it fails.
+  Fortunately, thanks to guarded recursion there exists a solution, but its
+  construction is bit complicated. This module provides a general method of
+  solving this and similar equations. *)
+
+(*
 Definition monotone {A B : Type}
     (A_le : A → A → Prop) (B_le : B → B → Prop) (f : A → B) : Prop :=
   ∀ x y, A_le x y → B_le (f x) (f y).
@@ -11,10 +38,13 @@ Record mon_arrow {A B : Type}
   }.
 
 Coercion ma_apply : mon_arrow >-> Funclass.
+*)
 
-Module Type WorldDescr.
+(** ** Single world layer *)
+
+Module Type WorldLayer.
   Parameter PreSemType    : Type.
-  Parameter PreSemType_le : PreSemType → PreSemType → Prop.
+  Declare Instance PreOrderCore_PreSemType : PreOrderCore PreSemType.
 
   (** Functor that makes World out of ▷SemType *)
   Parameter WorldF : Type → Type.
