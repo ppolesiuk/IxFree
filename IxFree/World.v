@@ -42,21 +42,31 @@ Coercion ma_apply : mon_arrow >-> Funclass.
 
 (** ** Single world layer *)
 
+(** The solution consists of layers of worlds, with one layer for each step
+  index. User should provide a recursive equation as a description of single
+  layer. *)
+
 Module Type WorldLayer.
-  Parameter PreSemType    : Type.
+  (** Semantic types are always monotone functions from world to some other
+    preorder, which we call here [PreSemType]. In above example with state,
+    PreSemTypes are just relations on values ([Value → Prop]) with relation
+    inclusion as an order. *)
+  Parameter PreSemType : Type.
   Declare Instance PreOrderCore_PreSemType : PreOrderCore PreSemType.
 
-  (** Functor that makes World out of ▷SemType *)
-  Parameter WorldF : Type → Type.
+  (** The next ingedient is a functor that makes World out of [▷SemType], i.e.,
+    another layer in the construction of world. The library supports only
+    covariant functors, so there is a limitaion, that [▷SemType] can appear
+    only positively in the definition of worlds. *)
+  Parameter WorldF : ∀ (LSemType : Type) {PST : PreOrderCore LSemType}, Type.
+  Declare Instance PreOrderCore_WorldF
+    (LSemType : Type) {PST : PreOrderCore LSemType} :
+      PreOrderCore (WorldF PreSemType).
 
   (** Functorial operation on maps *)
   Parameter WorldF_map :
     ∀ {STA STB : Type}, (STA → STB) → WorldF STA → WorldF STB.
-
-  (** Order on worlds at the same level *)
-  Parameter WorldF_le :
-    ∀ {SemType : Type}, WorldF SemType → WorldF SemType → Prop.
-End WorldDescr.
+End WorldLayer.
 
 Module Make(WD : WorldDescr).
 
