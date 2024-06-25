@@ -311,7 +311,8 @@ Local Ltac prepare_elim H ContTac :=
     ContTac H
   else
     let H1 := fresh "Helim" in
-    eassert (H1 : _ ⊨ _); [ apply H | ContTac H1; clear H1 ].
+    refine ((fun (H1 : _ ⊨ _) => _) _);
+    cycle 1; [ eapply H | ContTac H1; clear H1 ].
 
 Local Ltac iapply_in_goal H :=
   first
