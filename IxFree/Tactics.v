@@ -502,7 +502,7 @@ Ltac later_shift :=
 (** ** Elimination rules *)
 
 (** The [iapply] tactic is similar to standard the [eapply] tactic. *)
-Tactic Notation "iapply" constr(H) := iapply_in_goal H.
+Tactic Notation "iapply" uconstr(H) := iapply_in_goal H.
 
 (** The [idestruct] tactic is similar to standard the [edestruct] tactic.
   However, due to limitation of Ltac, all intro-patterns are given as separate
