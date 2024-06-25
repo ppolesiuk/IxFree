@@ -21,6 +21,10 @@ by the user of the library. *)
 (* ------------------------------------------------------------------------- *)
 (** *** General Tactics *)
 
+(** Check if [H] is a valid IxFree proposition *)
+Local Ltac is_ixfree H :=
+  let _ := constr:(H : _ ⊨ _) in idtac.
+
 (** Check if [H] is a hypothesis. *)
 Local Ltac is_hyp H :=
   assert_succeeds (rename H into H).
@@ -302,6 +306,13 @@ Local Ltac iintros_all :=
 (* ------------------------------------------------------------------------- *)
 (** *** Elimination rules *)
 
+Local Ltac prepare_elim H ContTac :=
+  tryif is_ixfree H then
+    ContTac H
+  else
+    let H1 := fresh "Helim" in
+    eassert (H1 : _ ⊨ _); [ apply H | ContTac H1; clear H1 ].
+
 Local Ltac iapply_in_goal H :=
   first
   [ exact H
@@ -323,20 +334,23 @@ Local Ltac iapply_in_goal H :=
     else fail "cannot apply"
   ].
 
-Local Ltac prepare_idestruct H ContTac :=
+Local Ltac prepare_idestruct_main H ContTac :=
   tryif first [ is_iprop H | is_conj H | is_disj H | is_exists H ] then
     ContTac H
   else tryif is_arrow H then
     let H1 := fresh "H" in
     refine ((fun H1 => _) (I_arrow_elim _ _ H _));
-    cycle 1; [ | prepare_idestruct (id H1) ContTac; clear H1 ]
+    cycle 1; [ | prepare_idestruct_main (id H1) ContTac; clear H1 ]
   else tryif is_forall H then
     let H1 := fresh "H" in
     refine ((fun H1 => _) (I_forall_elim _ _ H _));
-    [ prepare_idestruct (id H1) ContTac; clear H1 ]
+    [ prepare_idestruct_main (id H1) ContTac; clear H1 ]
   else
     let T := type of H in
     fail "cannot destruct " T.
+
+Local Ltac prepare_idestruct H ContTac :=
+  prepare_elim H ltac:(fun H1 => prepare_idestruct_main H1 ContTac).
 
 Local Ltac idestruct_simple H :=
   tryif is_iprop H then
@@ -502,7 +516,8 @@ Ltac later_shift :=
 (** ** Elimination rules *)
 
 (** The [iapply] tactic is similar to standard the [eapply] tactic. *)
-Tactic Notation "iapply" constr(H) := iapply_in_goal H.
+Tactic Notation "iapply" uconstr(H) :=
+  prepare_elim H iapply_in_goal.
 
 (** The [idestruct] tactic is similar to standard the [edestruct] tactic.
   However, due to limitation of Ltac, all intro-patterns are given as separate
