@@ -49,8 +49,7 @@ Section LargeNums.
     iintros [ | n ] Hn.
     + exfalso; eapply large_num_Z; eassumption.
     + iexists n; isplit; [ iintro; reflexivity | ].
-      (* TODO: to jest słabe. Trzeba poprawić taktykę iapply *)
-      apply large_num_S; assumption.
+      iapply large_num_S; assumption.
   Qed.
 End LargeNums.
 
@@ -82,7 +81,7 @@ Section UnaryFixpoint.
     destruct n as [ | n ]; [ exfalso; eapply large_num_Z; eassumption | ].
     destruct m as [ | m ]; [ exfalso; eapply large_num_Z; eassumption | ].
     apply large_num_S in Hn, Hm.
-    simpl; iapply (f_contr w).
+    simpl; iapply f_contr.
     iintro; iapply IH; assumption.
   Qed.
 
@@ -100,8 +99,7 @@ Section UnaryFixpoint.
       idestruct (@large_num_exists w) as n Hn.
       iexists n; isplit; [ | iapply Hx ]; assumption.
     + iintro Hx; idestruct Hx as n Hn Hx.
-      (* TODO: make iapply work better *)
-      iintros m Hm; iapply (I_fix1_n_large w);
+      iintros m Hm; iapply I_fix1_n_large;
         [ exact Hn | exact Hm | exact Hx ].
   Qed.
 End UnaryFixpoint.
