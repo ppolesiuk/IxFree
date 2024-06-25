@@ -334,6 +334,27 @@ Local Ltac iapply_in_goal H :=
     else fail "cannot apply"
   ].
 
+Local Ltac iapply_in_hyp H Hyp :=
+  tryif is_iprop H then
+    apply (I_prop_elim _ H) in Hyp
+  else tryif is_arrow H then
+    let H1 := fresh "H" in
+    first
+    [ assert (H1 := I_arrow_elim _ _ H Hyp); clear Hyp; rename H1 into Hyp
+    | refine ((fun H1 => _) (I_arrow_elim _ _ H _));
+      cycle 1; [ | iapply_in_hyp H1 Hyp; clear H1 ]
+    ]
+  else tryif is_conj H then
+    first
+    [ iapply_in_hyp (I_conj_elim1 _ _ H) Hyp
+    | iapply_in_hyp (I_conj_elim2 _ _ H) Hyp
+    ]
+  else tryif is_forall H then
+    let H1 := fresh "H" in
+    refine ((fun H1 => _) (I_forall_elim _ _ H _));
+    [ iapply_in_hyp H1 Hyp; clear H1 ]
+  else fail "cannot apply".
+
 Local Ltac prepare_idestruct_main H ContTac :=
   tryif first [ is_iprop H | is_conj H | is_disj H | is_exists H ] then
     ContTac H
@@ -518,6 +539,9 @@ Ltac later_shift :=
 (** The [iapply] tactic is similar to standard the [eapply] tactic. *)
 Tactic Notation "iapply" uconstr(H) :=
   prepare_elim H iapply_in_goal.
+
+Tactic Notation "iapply" uconstr(H) "in" hyp(Hyp) :=
+  prepare_elim H ltac:(fun H1 => iapply_in_hyp H1 Hyp).
 
 (** The [idestruct] tactic is similar to standard the [edestruct] tactic.
   However, due to limitation of Ltac, all intro-patterns are given as separate
