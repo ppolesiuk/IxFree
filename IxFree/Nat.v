@@ -3,6 +3,7 @@
  *)
 Require Import Utf8.
 Require Import IxFree.Base.
+Require Import IxFree.Relations.
 Require Import PeanoNat.
 
 (** * Natural Step-Indexed Kripke Model *)
@@ -32,4 +33,6 @@ Instance IWorldCore_NatWorld : IWorldCore NatWorld :=
 Instance IWorld_NatWorld : IWorld NatWorld.
 Proof. split; simpl; auto. Qed.
 
-Notation IProp := (WProp NatWorld).
+Notation IProp    := (WProp NatWorld).
+Notation IRel     := (WRel NatWorld).
+Notation IRel_sig := (WRel_sig NatWorld).

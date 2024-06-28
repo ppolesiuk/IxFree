@@ -426,6 +426,25 @@ Local Tactic Notation "idestruct_prefix" constr(H) "as"
     let T := type of H in
     fail "cannot destruct " T.
 
+Local Ltac ispecialize_one H t HCont :=
+  let H1 := fresh H in
+  tryif is_iprop H then
+    refine ((fun H1 => _) (I_prop_elim _ H));
+    clear H;
+    rename H1 into H;
+    ispecialize_one H t HCont
+  else tryif is_arrow H then
+    refine ((fun H1 => _) (I_arrow_elim _ _ H t));
+    cycle 1; [ | simpl in H1; clear H; rename H1 into H; HCont ]
+  else tryif is_forall H then
+    refine ((fun H1 => _) (I_forall_elim _ _ H t));
+    cycle 1; [ simpl in H1; clear H; rename H1 into H; HCont ]
+  else tryif is_ixfree H then
+    let T := type of H in
+    fail "cannot specialize" T
+  else
+    specialize (H t); [ HCont ].
+
 (* end details *)
 
 (* ========================================================================= *)
@@ -623,6 +642,55 @@ Tactic Notation "idestruct" constr(H) "as"
   prepare_idestruct Ht5 ltac:(fun H6 => idestruct_binary H6 as p6 p7;
   try clear Ht1; try clear Ht2; try clear Ht3; try clear Ht4;
   try clear Ht5)))))).
+
+(** The [ispecialize] tactic is similar to standard the [specialize] tactic.
+  However, since the tactic uses refine, the provided terms can contain some
+  placeholders. *)
+Tactic Notation "ispecialize" hyp(H) uconstr(t1) :=
+  ispecialize_one H t1 idtac.
+
+Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) :=
+  ispecialize_one H t1 ltac:(
+  ispecialize_one H t2 idtac).
+
+Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) uconstr(t3) :=
+  ispecialize_one H t1 ltac:(
+  ispecialize_one H t2 ltac:(
+  ispecialize_one H t3 idtac)).
+
+Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) uconstr(t3)
+    uconstr(t4) :=
+  ispecialize_one H t1 ltac:(
+  ispecialize_one H t2 ltac:(
+  ispecialize_one H t3 ltac:(
+  ispecialize_one H t4 idtac))).
+
+Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) uconstr(t3)
+    uconstr(t4) uconstr(t5) :=
+  ispecialize_one H t1 ltac:(
+  ispecialize_one H t2 ltac:(
+  ispecialize_one H t3 ltac:(
+  ispecialize_one H t4 ltac:(
+  ispecialize_one H t5 idtac)))).
+
+Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) uconstr(t3)
+    uconstr(t4) uconstr(t5) uconstr(t6) :=
+  ispecialize_one H t1 ltac:(
+  ispecialize_one H t2 ltac:(
+  ispecialize_one H t3 ltac:(
+  ispecialize_one H t4 ltac:(
+  ispecialize_one H t5 ltac:(
+  ispecialize_one H t6 idtac))))).
+
+Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) uconstr(t3)
+    uconstr(t4) uconstr(t5) uconstr(t6) uconstr(t7) :=
+  ispecialize_one H t1 ltac:(
+  ispecialize_one H t2 ltac:(
+  ispecialize_one H t3 ltac:(
+  ispecialize_one H t4 ltac:(
+  ispecialize_one H t5 ltac:(
+  ispecialize_one H t6 ltac:(
+  ispecialize_one H t7 idtac)))))).
 
 (* ========================================================================= *)
 (** ** Other tactics *)
