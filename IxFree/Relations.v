@@ -42,6 +42,7 @@ Coercion WRel_type : WRel_sig >-> Sortclass.
 
 Section WRelRelations.
   Context {W : Type} {PCW : PreOrderCore W} {PW : PreOrder W}.
+  Context {IWC : IWorldCore W} {WC : IWorld W}.
 
   Fixpoint WRel_equiv (Σ : WRel_sig W) : Σ → Σ → WProp W :=
     match Σ return Σ → Σ → WProp W with
@@ -54,10 +55,79 @@ Section WRelRelations.
     | WRel_base _ => λ R₁ R₂, R₁ →ᵢ R₂
     | T ⇒ᵢ Σ      => λ R₁ R₂, ∀ᵢ x : T, WRel_subrel Σ (R₁ x) (R₂ x)
     end.
+
+  Fixpoint WRel_later (Σ : WRel_sig W) : Σ → Σ :=
+    match Σ return Σ → Σ with
+    | WRel_base _ => λ R, ▷ R
+    | T ⇒ᵢ Σ      => λ R x, WRel_later Σ (R x)
+    end.
 End WRelRelations.
 
 Notation "R ≈ᵢ S" := (WRel_equiv _ R S) (at level 70).
 Notation "R ≾ᵢ S" := (WRel_subrel _ R S) (at level 70).
+Notation "▶ R" := (WRel_later _ R) (at level 30).
+
+Section WRelRelations.
+  Context {W : Type} {PCW : PreOrderCore W} {PW : PreOrder W}.
+  Context {IWC : IWorldCore W} {WC : IWorld W}.
+
+  Lemma WRel_equiv_refl (Σ : WRel_sig W) (R : Σ) (w : W) :
+    w ⊨ R ≈ᵢ R.
+  Proof.
+    revert w; induction Σ; intro w; simpl.
+    + isplit; iintro H; assumption.
+    + iintro x; iapply IHΣ.
+  Qed.
+
+  Lemma WRel_equiv_symm (Σ : WRel_sig W) (R S : Σ) (w : W) :
+    w ⊨ R ≈ᵢ S →ᵢ S ≈ᵢ R.
+  Proof.
+    revert w; induction Σ; intro w; simpl; iintro H.
+    + isplit; iintro H'; iapply H; assumption.
+    + iintro x; iapply IHΣ; iapply H.
+  Qed.
+
+  Lemma WRel_equiv_trans (Σ : WRel_sig W) (R S T : Σ) (w : W) :
+    w ⊨ R ≈ᵢ S →ᵢ S ≈ᵢ T →ᵢ R ≈ᵢ T.
+  Proof.
+    revert w; induction Σ; intro w; simpl; iintros H1 H2.
+    + isplit; iintro H; [ iapply H2; iapply H1 | iapply H1; iapply H2 ];
+        assumption.
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
+  Qed.
+
+  Lemma WRel_sub_refl (Σ : WRel_sig W) (R : Σ) (w : W) :
+    w ⊨ R ≾ᵢ R.
+  Proof.
+    revert w; induction Σ; intro w; simpl.
+    + iintro H; assumption.
+    + iintro x; iapply IHΣ.
+  Qed.
+
+  Lemma WRel_sub_trans (Σ : WRel_sig W) (R S T : Σ) (w : W) :
+    w ⊨ R ≾ᵢ S →ᵢ S ≾ᵢ T →ᵢ R ≾ᵢ T.
+  Proof.
+    revert w; induction Σ; intro w; simpl; iintros H1 H2.
+    + iintro H; iapply H2; iapply H1; assumption.
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
+  Qed.
+
+  Lemma WRel_equiv_sub (Σ : WRel_sig W) (R S : Σ) (w : W) :
+    w ⊨ R ≈ᵢ S →ᵢ R ≾ᵢ S.
+  Proof.
+    revert w; induction Σ; intro w; simpl.
+    + iintro H; iapply H.
+    + iintros H x; iapply IHΣ; iapply H.
+  Qed.
+
+  Lemma WRel_sub_equiv (Σ : WRel_sig W) (R S : Σ) (w : W) :
+    w ⊨ R ≾ᵢ S →ᵢ S ≾ᵢ R →ᵢ R ≈ᵢ S.
+  Proof.
+    revert w; induction Σ; intro w; simpl; iintros H1 H2.
+    + isplit; assumption.
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
+  Qed.
+End WRelRelations.
 
 (** ** Fixpoints *)
 
@@ -74,11 +144,17 @@ Section WRelFix.
   (** A function is contractive if it maps almost equivalent relations
   (this "almost" is expressed by later) to more equivalent ones. *)
 
-  Definition I_contractive (Σ : WRel_sig W) (f : Σ → Σ) : WProp W :=
+  Definition I_contractive {Σ Δ : WRel_sig W} (f : Σ → Δ) : WProp W :=
     ∀ᵢ R₁ R₂, ▷(R₁ ≈ᵢ R₂) →ᵢ f R₁ ≈ᵢ f R₂.
 
-  Definition contractive (Σ : WRel_sig W) (f : Σ → Σ) : Prop :=
-    ∀ w, w ⊨ I_contractive Σ f.
+  Definition contractive {Σ Δ : WRel_sig W} (f : Σ → Δ) : Prop :=
+    ∀ w, w ⊨ I_contractive f.
+
+  Definition I_nonexpansive {Σ Δ : WRel_sig W} (f : Σ → Δ) : WProp W :=
+    ∀ᵢ R₁ R₂, R₁ ≈ᵢ R₂ →ᵢ f R₁ ≈ᵢ f R₂.
+
+  Definition nonexpansive {Σ Δ : WRel_sig W} (f : Σ → Δ) : Prop :=
+    ∀ w, w ⊨ I_nonexpansive f.
 
   (** *** Curry and Uncurry *)
 
@@ -140,11 +216,11 @@ Section WRelFix.
 
   (** *** Fixpoint *)
 
-  Definition I_fix (Σ : WRel_sig W) (f : Σ → Σ) : Σ :=
+  Definition I_fix {Σ : WRel_sig W} (f : Σ → Σ) : Σ :=
     WRel_curry Σ (I_fix1 (λ R, WRel_uncurry Σ (f (WRel_curry Σ R)))).
 
   Lemma I_fix_is_fixpoint (Σ : WRel_sig W) (f : Σ → Σ) {w : W} :
-    w ⊨ I_contractive Σ f →ᵢ I_fix Σ f ≈ᵢ f (I_fix Σ f).
+    w ⊨ I_contractive f →ᵢ I_fix f ≈ᵢ f (I_fix f).
   Proof.
     iintro f_contr.
     iapply WRel_equiv_move_curry.
@@ -157,4 +233,21 @@ Section WRelFix.
   Qed.
 
   #[global] Opaque I_fix.
+
+  Lemma I_fix_unroll (Σ : WRel_sig W) (f : Σ → Σ) {w : W} :
+    w ⊨ I_contractive f →
+    w ⊨ I_fix f ≾ᵢ f (I_fix f).
+  Proof.
+    intro f_contr.
+    iapply WRel_equiv_sub; iapply I_fix_is_fixpoint; assumption.
+  Qed.
+
+  Lemma I_fix_roll (Σ : WRel_sig W) (f : Σ → Σ) {w : W} :
+    w ⊨ I_contractive f →
+    w ⊨ f (I_fix f) ≾ᵢ I_fix f.
+  Proof.
+    intro f_contr.
+    iapply WRel_equiv_sub; iapply WRel_equiv_symm.
+    iapply I_fix_is_fixpoint; assumption.
+  Qed.
 End WRelFix.
