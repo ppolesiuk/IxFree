@@ -1,5 +1,5 @@
 (include_subdirs qualified)
 (coq.theory
   (name IxFree)
-  (package coq-ixfree)
+  (package ixfree)
   (coqdoc_flags -utf8 -g))
