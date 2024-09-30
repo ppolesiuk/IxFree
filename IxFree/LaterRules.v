@@ -191,11 +191,16 @@ Local Ltac loeb_induction_anon :=
 Local Ltac index_case_named HF :=
   lazymatch goal with
   | [ |- ?w ⊨ _ ] =>
-    let HProp := fresh "HProp" in
-    destruct (I_index_case w) as [ HF | HProp ];
-      [ | repeat lazymatch goal with
-                 | [ H: w ⊨ ▷(_)ᵢ |- _ ] => apply HProp in H
-                 end; clear HProp
+    let HProp  := fresh "HProp" in
+    let HFalse := fresh "HFalse" in
+    destruct (I_index_case w) as [ HFalse | HProp ];
+      [ revert HFalse;
+        repeat lazymatch goal with
+               | [ H: w ⊨ ▷(_)ᵢ |- _ ] => clear H
+               end; intro HF
+      | repeat lazymatch goal with
+               | [ H: w ⊨ ▷(_)ᵢ |- _ ] => apply HProp in H
+               end; clear HProp
       ]
   end.
 
