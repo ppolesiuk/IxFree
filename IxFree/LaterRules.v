@@ -125,6 +125,14 @@ End Lift.
 Section Unlift.
   Context {UCW : IWorldUnliftCore W} {LW : IWorldUnlift W}.
 
+  Lemma I_world_unlift_later (P : WProp W) {w : W} :
+    (world_unlift w ⊨ P) → (w ⊨ ▷ P).
+  Proof.
+    intro H; apply I_later_intro; intros w' Hord.
+    eapply I_valid_monotone; [ | eassumption ].
+    apply world_unlift_limit; assumption.
+  Qed.
+
   Lemma I_disj_later_down (P Q : WProp W) {w : W} :
     (w ⊨ ▷(P ∨ᵢ Q)) → w ⊨ ▷P ∨ᵢ ▷Q.
   Proof.
@@ -132,14 +140,9 @@ Section Unlift.
     remember (world_index w) as n; destruct n as [ | n ].
     + ileft; apply I_later_zero; auto.
     + apply I_later_elim with (w' := world_unlift w) in H;
-        [ | apply world_unlift_ord; rewrite <- Heqn; apply Nat.lt_0_succ ].
-      idestruct H as H H.
-      - ileft; apply I_later_intro; intros w' Hord.
-        eapply I_valid_monotone; [ | eassumption ].
-        apply world_unlift_limit; assumption.
-      - iright; apply I_later_intro; intros w' Hord.
-        eapply I_valid_monotone; [ | eassumption ].
-        apply world_unlift_limit; assumption.
+        [ | eapply world_unlift_ord; eassumption ].
+      idestruct H as H H; [ ileft | iright ]; apply I_world_unlift_later;
+        assumption.
   Qed.
 
   Lemma I_exists_later_down (A : Type) (P : A → WProp W) (ex : A) {w : W} :
@@ -149,11 +152,9 @@ Section Unlift.
     remember (world_index w) as n; destruct n as [ | n ].
     + iexists ex; apply I_later_zero; auto.
     + apply I_later_elim with (w' := world_unlift w) in H;
-        [ | apply world_unlift_ord; rewrite <- Heqn; apply Nat.lt_0_succ ].
+        [ | eapply world_unlift_ord; eassumption ].
       idestruct H as x H; iexists x.
-      apply I_later_intro; intros w' Hord.
-      eapply I_valid_monotone; [ | eassumption ].
-      apply world_unlift_limit; assumption.
+      apply I_world_unlift_later; assumption.
   Qed.
 End Unlift.
 

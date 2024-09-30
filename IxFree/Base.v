@@ -166,7 +166,7 @@ Class IWorldUnliftCore (W : Type) : Type :=
 Class IWorldUnlift (W : Type)
     {PCW : PreOrderCore W} {ICW : IWorldCore W}
     {UCW : IWorldUnliftCore W} : Prop :=
-  { world_unlift_ord   : ∀ w, world_index w > 0 → w ⊏↓ world_unlift w
+  { world_unlift_ord   : ∀ w n, S n = world_index w → w ⊏↓ world_unlift w
   ; world_unlift_limit : ∀ w w', w ⊏↓ w' → world_unlift w ⊑ w'
   }.
 
@@ -188,5 +188,5 @@ Proof.
   + right; intros [ w' [ _ Hidx ] ].
     rewrite <- Heqn in Hidx; apply Nat.nlt_0_r in Hidx; assumption.
   + left; exists (world_unlift w).
-    apply world_unlift_ord; rewrite <- Heqn; apply Nat.lt_0_succ.
+    eapply world_unlift_ord; eassumption.
 Qed.

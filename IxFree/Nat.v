@@ -58,7 +58,7 @@ Qed.
 Instance IWorldUnlift_NatWorld : IWorldUnlift NatWorld.
 Proof.
   split.
-  + intros [ n ] H; split; simpl; [ apply Nat.le_pred_l | ].
+  + intros [ n ] m H; split; simpl; [ apply Nat.le_pred_l | ].
     apply Nat.lt_pred_l; intro Heq; subst; inversion H.
   + intros [ n ] [ m ] [ _ Hidx ]; apply Nat.lt_le_pred; assumption.
 Qed.
