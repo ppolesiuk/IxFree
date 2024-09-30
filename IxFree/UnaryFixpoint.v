@@ -5,6 +5,7 @@ Require Import Utf8.
 Require Import IxFree.Base.
 Require Import IxFree.Connectives.
 Require Import IxFree.Tactics.
+Require Import IxFree.LaterRules.
 Require Import PeanoNat.
 
 (** * Large Numbers and Unary Fixpoints *)
@@ -53,8 +54,9 @@ Section LargeNums.
   Lemma large_num_S {w : W} n :
     w ⊨ I_large_num (S n) →ᵢ ▷ I_large_num n.
   Proof.
-    iintros [ Hn ]; iintro; constructor.
-    eapply Nat.lt_le_trans; [ | apply Nat.lt_succ_r ]; eassumption.
+    iintros [ Hn ]; apply I_later_intro; intros w' Hord; constructor.
+    eapply Nat.lt_le_trans; [ apply Hord | ].
+    apply Nat.lt_succ_r; eassumption.
   Qed.
 
   #[global] Opaque I_large_num.

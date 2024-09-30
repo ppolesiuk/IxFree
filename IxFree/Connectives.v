@@ -233,59 +233,34 @@ End Exists.
 (** ** Later *)
 
 Section Later.
-  Context {IWC : IWorldCore W} {WC : IWorld W}.
+  Context {ICW : IWorldCore W} {IW : IWorld W}.
   Variables P : WProp W.
 
   Local Definition I_later_func (w : W) : Prop :=
-    ∀ w', w ⊑ w' → world_index w' < world_index w → w' ⊨ P.
+    ∀ w', w ⊏↓ w' → w' ⊨ P.
 
   Local Lemma I_later_monotone : monotone I_later_func.
   Proof.
-    intros w₁ w₂ Hw H w' Hw' Hidx; apply H.
-    + eapply preord_trans; eassumption.
-    + eapply Nat.lt_le_trans; [ eassumption | ].
-      apply world_index_ord; assumption.
+    intros w₁ w₂ Hw H w' Hw'; apply H.
+    eapply world_strict_preord_trans_l; eassumption.
   Qed.
 
   Definition I_later : WProp W :=
     {| ma_monotone := I_later_monotone |}.
 
   Lemma I_later_intro {w : W} :
-    (∀ w', w ⊑ w' → world_index w' < world_index w → w' ⊨ P) → w ⊨ I_later.
+    (∀ w', w ⊏↓ w' → w' ⊨ P) → w ⊨ I_later.
   Proof.
     intro H; constructor; exact H.
   Qed.
 
   Lemma I_later_elim {w w' : W} :
-    w ⊑ w' → world_index w' < world_index w → w ⊨ I_later → w' ⊨ P.
+    w ⊏↓ w' → w ⊨ I_later → w' ⊨ P.
   Proof.
-    intros Hw Hidx [ H ]; apply H; assumption.
+    intros Hw [ H ]; apply H; assumption.
   Qed.
 
   #[global] Opaque I_later.
-
-  Lemma I_later_zero {w : W} :
-    world_index w = 0 → w ⊨ I_later.
-  Proof.
-    intros Hidx; apply I_later_intro; rewrite Hidx.
-    intros w' _ Hlt.
-    inversion Hlt.
-  Qed.
-
-  Lemma I_loeb_induction {w : W} :
-    w ⊨ I_arrow I_later P → w ⊨ P.
-  Proof.
-    assert (LOEB : ∀ n w, world_index w < n → w ⊨ I_arrow I_later P → w ⊨ P).
-    { clear w; intro n; induction n; intros w Hlt H.
-      + inversion Hlt.
-      + apply (I_arrow_elim I_later _ H), I_later_intro.
-        intros w' Hord Hidx; apply IHn.
-        - eapply Nat.lt_le_trans; [ eassumption | ].
-          apply le_S_n, Hlt.
-        - eapply I_valid_monotone; eassumption.
-    }
-    eapply LOEB, le_n.
-  Qed.
 End Later.
 
 (* ========================================================================= *)

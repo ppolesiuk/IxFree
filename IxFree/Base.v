@@ -3,6 +3,7 @@
  *)
 Require Import Utf8.
 Require Import RelationClasses.
+Require Import Decidable PeanoNat.
 
 (** * Base Definitions *)
 
@@ -78,8 +79,45 @@ Class IWorldCore (W : Type) {PCW : PreOrderCore W} : Type :=
 Class IWorld (W : Type)
     {PCW : PreOrderCore W}
     {PW  : PreOrder W}
-    {IWC : IWorldCore W} : Prop :=
+    {ICW : IWorldCore W} : Prop :=
   { world_index_ord : ∀ w₁ w₂ : W, w₁ ⊑ w₂ → world_index w₁ ≥ world_index w₂ }.
+
+(** We define a strict version of world order, which requires step-index to
+  be strictly lower. *)
+
+Definition world_strict_preord {W : Type}
+  {PCW : PreOrderCore W} {ICW : IWorldCore W} (w₁ w₂ : W) : Prop :=
+  w₁ ⊑ w₂ ∧ world_index w₂ < world_index w₁.
+
+Notation "w₁ ⊏↓ w₂" := (world_strict_preord w₁ w₂) (at level 70).
+
+#[export]
+Instance Transitive_world_strict_preord (W : Type)
+  {PCW : PreOrderCore W} {PW : PreOrder W} {ICW : IWorldCore W} :
+  Transitive (world_strict_preord (W:=W)).
+Proof.
+  intros w₁ w₂ w₃ H1 H2; split; etransitivity; apply H1 || apply H2.
+Qed.
+
+Lemma world_strict_preord_trans_l {W : Type}
+  {PCW : PreOrderCore W} {PW : PreOrder W} {ICW : IWorldCore W} {IW : IWorld W}
+  (w₁ w₂ w₃ : W) :
+  w₁ ⊑ w₂ → w₂ ⊏↓ w₃ → w₁ ⊏↓ w₃.
+Proof.
+  intros H1 H2; split; [ etransitivity; apply H1 || apply H2 | ].
+  eapply Nat.lt_le_trans; [ apply H2 | ].
+  apply world_index_ord; assumption.
+Qed.
+
+Lemma world_strict_preord_trans_r {W : Type}
+  {PCW : PreOrderCore W} {PW : PreOrder W} {ICW : IWorldCore W} {IW : IWorld W}
+  (w₁ w₂ w₃ : W) :
+  w₁ ⊏↓ w₂ → w₂ ⊑ w₃ → w₁ ⊏↓ w₃.
+Proof.
+  intros H1 H2; split; [ etransitivity; apply H1 || apply H2 | ].
+  eapply Nat.le_lt_trans; [ | apply H1 ].
+  apply world_index_ord; assumption.
+Qed.
 
 (** ** World-Indexed Propositions *)
 
@@ -101,3 +139,54 @@ Section I_valid.
 End I_valid.
 
 Notation "w ⊨ P" := (I_valid_at w P) (at level 98, no associativity).
+
+(** ** Additional Structure of Worlds *)
+
+(** Some desired properties require additional structure of possible worlds.
+  See [LaterRules] module for some of such properties. *)
+
+(** *** Lifting Worlds to Higher Index *)
+
+Class IWorldLiftCore (W : Type) : Type :=
+  { world_lift : W → W }.
+
+Class IWorldLift (W : Type)
+    {PCW : PreOrderCore W} {ICW : IWorldCore W}
+    {LCW : IWorldLiftCore W} : Prop :=
+  { world_lift_ord     : ∀ w, world_lift w ⊏↓ w
+  ; world_lift_limit_l : ∀ w w', world_lift w ⊏↓ w' → w ⊑ w'
+  ; world_lift_limit_u : ∀ w w', w ⊏↓ w' → w ⊑ world_lift w'
+  }.
+
+(** *** Unlifting World to Lower Index *)
+
+Class IWorldUnliftCore (W : Type) : Type :=
+  { world_unlift : W → W }.
+
+Class IWorldUnlift (W : Type)
+    {PCW : PreOrderCore W} {ICW : IWorldCore W}
+    {UCW : IWorldUnliftCore W} : Prop :=
+  { world_unlift_ord   : ∀ w, world_index w > 0 → w ⊏↓ world_unlift w
+  ; world_unlift_limit : ∀ w w', w ⊏↓ w' → world_unlift w ⊑ w'
+  }.
+
+(** *** Worlds With Decidable Existance of a Lower Index *)
+
+Class IWorldBottomDec (W : Type)
+    {PCW : PreOrderCore W} {ICW : IWorldCore W} : Prop :=
+  { world_bottom_dec : ∀ w : W, decidable (∃ w', w ⊏↓ w') }.
+
+(** Worlds with unlifting has decidable existance of a lower index. *)
+#[export]
+Instance IWorldBottomDec_of_IWorldUnlift (W : Type)
+  {PCW : PreOrderCore W}
+  {ICW : IWorldCore W}
+  {UCW : IWorldUnliftCore W} {UW : IWorldUnlift W} : IWorldBottomDec W.
+Proof.
+  split; intro w.
+  remember (world_index w) as n; destruct n as [ | n ].
+  + right; intros [ w' [ _ Hidx ] ].
+    rewrite <- Heqn in Hidx; apply Nat.nlt_0_r in Hidx; assumption.
+  + left; exists (world_unlift w).
+    apply world_unlift_ord; rewrite <- Heqn; apply Nat.lt_0_succ.
+Qed.
