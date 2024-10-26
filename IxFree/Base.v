@@ -91,6 +91,9 @@ Definition world_strict_preord {W : Type}
 
 Notation "w₁ ⊏↓ w₂" := (world_strict_preord w₁ w₂) (at level 70).
 
+(** This strict world order is transitive, and can be composed with regular
+  order. *)
+
 #[export]
 Instance Transitive_world_strict_preord (W : Type)
   {PCW : PreOrderCore W} {PW : PreOrder W} {ICW : IWorldCore W} :
@@ -147,8 +150,16 @@ Notation "w ⊨ P" := (I_valid_at w P) (at level 98, no associativity).
 
 (** *** Lifting Worlds to Higher Index *)
 
+(** We can additionally require that each world can be lifted to higher
+  step-index, by the following [world_lift] operation. *)
+
 Class IWorldLiftCore (W : Type) : Type :=
   { world_lift : W → W }.
+
+(** Intuitively, the lifted world should have higher step-index and (except the
+  step-index) the lifting operation should not lose the precision. Formally,
+  this intuition is expressed by the following type-class with [world_lift]
+  properties. *)
 
 Class IWorldLift (W : Type)
     {PCW : PreOrderCore W} {ICW : IWorldCore W}
@@ -158,10 +169,19 @@ Class IWorldLift (W : Type)
   ; world_lift_limit_u : ∀ w w', w ⊏↓ w' → w ⊑ world_lift w'
   }.
 
+(** Existence of world lifting guarantees distribution laws of later operator
+  through implication and logical equivalence. Again, see [LaterRules] module
+  for details. *)
+
 (** *** Unlifting World to Lower Index *)
+
+(** Other possible requirement on the world structure is world unlifting. *)
 
 Class IWorldUnliftCore (W : Type) : Type :=
   { world_unlift : W → W }.
+
+(** World unlifting can be seen as en inverse of world lifting (module world
+  preorder), but we define it by giving the following conditions. *)
 
 Class IWorldUnlift (W : Type)
     {PCW : PreOrderCore W} {ICW : IWorldCore W}
@@ -170,13 +190,41 @@ Class IWorldUnlift (W : Type)
   ; world_unlift_limit : ∀ w w', w ⊏↓ w' → world_unlift w ⊑ w'
   }.
 
-(** *** Worlds With Decidable Existance of a Lower Index *)
+(** This definition is similar to the definition of [IWorldLift] class, but
+  there is no condition analogous to [world_lift_limit_l], since a world
+  may become less precise after unlifting. Moreover, [world_unlift_ord] makes
+  sense only for world with non-zero index. With these conditions it can be
+  easily shown, that unlifting is an inverse of lifting. *)
+
+Lemma world_unlift_lift {W : Type} {PCW : PreOrderCore W} {ICW : IWorldCore W}
+    {LCW : IWorldLiftCore W} {LW : IWorldLift W}
+    {UCW : IWorldUnliftCore W} {UW : IWorldUnlift W}
+    (w : W) :
+  world_unlift (world_lift w) ⊑ w ∧ w ⊑ world_unlift (world_lift w).
+Proof.
+  split.
+  + apply world_unlift_limit, world_lift_ord.
+  + destruct (world_lift_ord w) as [ _ Hn ].
+    remember (world_index (world_lift w)) as k.
+    destruct k; [ inversion Hn | ].
+    eapply world_lift_limit_l, world_unlift_ord; eassumption.
+Qed.
+
+(** Existence of world unlifting guarantees distribution laws of later operator
+  through disjunction and existential quantifier. See [LaterRules] module for
+  details. *)
+
+(** *** Worlds With Decidable Existence of a Lower Index *)
+
+(** When the existence of future world with lower step-index is decidable,
+  we can use [index_case] tactic defined in [LaterRules]. *)
 
 Class IWorldBottomDec (W : Type)
     {PCW : PreOrderCore W} {ICW : IWorldCore W} : Prop :=
   { world_bottom_dec : ∀ w : W, decidable (∃ w', w ⊏↓ w') }.
 
-(** Worlds with unlifting has decidable existance of a lower index. *)
+(** Worlds with unlifting has decidable existence of future world with a lower
+  step-index. *)
 #[export]
 Instance IWorldBottomDec_of_IWorldUnlift (W : Type)
   {PCW : PreOrderCore W}

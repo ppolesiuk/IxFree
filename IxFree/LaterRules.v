@@ -9,10 +9,20 @@ Require Import PeanoNat.
 
 Import PreOrderNotations.
 
+(** * Additional Inference Rules for Later Modality *)
+
+(** In this module we provide additional inference rules and lemmas related to
+  later modality. *)
+
 Section LaterRules.
 
 Context {W : Type} {PCW : PreOrderCore W} {PW : PreOrder W}.
 Context {ICW : IWorldCore W} {IW : IWorld W}.
+
+(* ========================================================================= *)
+(** ** Rules That Do Not Require Additional Structure on Worlds *)
+
+(** Later is satisfied for step-index 0 *)
 
 Lemma I_later_zero (P : WProp W) {w : W} :
   world_index w = 0 → w ⊨ ▷ P.
@@ -20,6 +30,8 @@ Proof.
   intro Hidx; apply I_later_intro.
   intros w' [ _ Hlt ]; rewrite Hidx in Hlt; inversion Hlt.
 Qed.
+
+(** Löb induction, i.e., synthetic induction on step indices *)
 
 Lemma I_loeb_induction (P : WProp W) {w : W} :
   (w ⊨ ▷ P →ᵢ P) → w ⊨ P.
@@ -35,6 +47,9 @@ Proof.
   }
   eapply LOEB, le_n.
 Qed.
+
+(** Most of later distribution laws do holds for any indexed structure of
+  worlds. *)
 
 Lemma I_arrow_later_down (P Q : WProp W) {w : W} :
   (w ⊨ ▷(P →ᵢ Q)) → w ⊨ ▷P →ᵢ ▷Q.
@@ -86,6 +101,9 @@ Proof.
   intro H; idestruct H as x H; later_shift; iexists x; assumption.
 Qed.
 
+(* ========================================================================= *)
+(** ** Additional Laws That Relies on Existence of [world_lift] *)
+
 Section Lift.
   Context {LCW : IWorldLiftCore W} {LW : IWorldLift W}.
 
@@ -121,6 +139,9 @@ Section Lift.
     isplit; assumption.
   Qed.
 End Lift.
+
+(* ========================================================================= *)
+(** ** Additional Laws That Relies on Existence of [world_unlift] *)
 
 Section Unlift.
   Context {UCW : IWorldUnliftCore W} {LW : IWorldUnlift W}.
@@ -158,8 +179,17 @@ Section Unlift.
   Qed.
 End Unlift.
 
+(* ========================================================================= *)
+(** Case Analysis on World Index *)
+
 Section BottomDec.
   Context {BW : IWorldBottomDec W}.
+
+  (** Here we provide a lemma, that in synthetic form expresses the case
+    analysis on world index. We are in either locally minimal world (in a sense
+    of step-index), expressed as [▷(False)ᵢ], or not, which means that
+    [▷(P)ᵢ] implies [P]. For convenience, we also provide a tactic [index_case]
+    that performs such an analysis. *)
 
   Lemma I_index_case (w : W) :
     (w ⊨ ▷(False)ᵢ) ∨ (∀ P, (w ⊨ ▷(P)ᵢ) → P).
@@ -176,6 +206,14 @@ End LaterRules.
 
 (* ========================================================================= *)
 (** ** Tactics *)
+
+(* ------------------------------------------------------------------------- *)
+(** *** Helper Tactics *)
+
+(** We start with defining some helper tactics. They should not be used
+  directly by the user of the library. *)
+
+(* begin details *)
 
 Local Ltac loeb_induction_named IH :=
   match goal with
@@ -204,6 +242,11 @@ Local Ltac index_case_named HF :=
       ]
   end.
 
+(* end details *)
+
+(* ------------------------------------------------------------------------- *)
+(** *** Löb Induction *)
+
 (** The key feature of step-indexed logic with later modality is an induction
 over step-indices, called Löb induction. When the goal is [w ⊨ φ], these
 tactics introduces an assumption [w ⊨ ▷ φ]. The name of this assumption can
@@ -211,6 +254,18 @@ be provided as a parameter for [loeb_induction] tactic. If [loeb_induction]
 is used without a name, the default name [IH] is used. *)
 Tactic Notation "loeb_induction" := loeb_induction_anon.
 Tactic Notation "loeb_induction" ident(H) := loeb_induction_named H.
+
+(* ------------------------------------------------------------------------- *)
+(** *** Index Case Analysis *)
+
+(** When the world structure implements an instance of [IWorldBottomDec], we
+can perform an analysis on the step-index by using [index_case] tactic. The
+tactic creates two subgoals. The first subgoal corresponds to the situation,
+that there is no future world with lower step-index, so we get additional
+assumption [w ⊨ ▷(False)ᵢ]. The optional parameter to the tactic is the name
+of this assumption (the default name is [HFalse]). Since from false we can
+prove everything, all assumptions of the form [w ⊨ ▷(φ)] are cleared. In the
+second subgoal, all assumptions of the form [w ⊨ ▷(φ)ᵢ] are changed to [φ]. *)
 
 Tactic Notation "index_case" :=
   let HFalse := fresh "HFalse" in
