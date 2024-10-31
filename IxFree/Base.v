@@ -173,14 +173,14 @@ Class IWorldLift (W : Type)
   through implication and logical equivalence. Again, see [LaterRules] module
   for details. *)
 
-(** *** Unlifting World to Lower Index *)
+(** *** Unlifting Worlds to Lower Index *)
 
 (** Other possible requirement on the world structure is world unlifting. *)
 
 Class IWorldUnliftCore (W : Type) : Type :=
   { world_unlift : W → W }.
 
-(** World unlifting can be seen as en inverse of world lifting (module world
+(** World unlifting can be seen as an inverse of world lifting (modulo world
   preorder), but we define it by giving the following conditions. *)
 
 Class IWorldUnlift (W : Type)
@@ -193,8 +193,8 @@ Class IWorldUnlift (W : Type)
 (** This definition is similar to the definition of [IWorldLift] class, but
   there is no condition analogous to [world_lift_limit_l], since a world
   may become less precise after unlifting. Moreover, [world_unlift_ord] makes
-  sense only for world with non-zero index. With these conditions it can be
-  easily shown, that unlifting is an inverse of lifting. *)
+  sense only for worlds with non-zero index. With these conditions it can be
+  easily shown that unlifting is an inverse of lifting. *)
 
 Lemma world_unlift_lift {W : Type} {PCW : PreOrderCore W} {ICW : IWorldCore W}
     {LCW : IWorldLiftCore W} {LW : IWorldLift W}

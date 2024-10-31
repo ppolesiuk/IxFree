@@ -243,8 +243,7 @@ Local Ltac is_later H :=
 Local Ltac goal_is_later :=
   refine (_ : _ ⊨ ▷ _).
 
-(** Assuming that [Hord] has type [W ⊑ w'], and [Hidx] has type
-  [world_index w' < world_index w] it changes all assumptions of the
+(** Assuming that [Hord] has type [W ⊏↓ w'] it changes all assumptions of the
   form [W ⊨ ▷ φ] into [w' ⊨ φ]. *)
 Local Ltac move_later_assumptions W Hord :=
   repeat match goal with

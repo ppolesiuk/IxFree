@@ -48,7 +48,7 @@ Proof.
   eapply LOEB, le_n.
 Qed.
 
-(** Most of later distribution laws do holds for any indexed structure of
+(** Most of later distribution laws do hold for any indexed structure of
   worlds. *)
 
 Lemma I_arrow_later_down (P Q : WProp W) {w : W} :
@@ -102,7 +102,7 @@ Proof.
 Qed.
 
 (* ========================================================================= *)
-(** ** Additional Laws That Relies on Existence of [world_lift] *)
+(** ** Additional Laws That Rely on Existence of [world_lift] *)
 
 Section Lift.
   Context {LCW : IWorldLiftCore W} {LW : IWorldLift W}.
@@ -186,8 +186,8 @@ Section BottomDec.
   Context {BW : IWorldBottomDec W}.
 
   (** Here we provide a lemma, that in synthetic form expresses the case
-    analysis on world index. We are in either locally minimal world (in a sense
-    of step-index), expressed as [▷(False)ᵢ], or not, which means that
+    analysis on world index. We are in either locally minimal world (in the
+    sense of step-index), expressed as [▷(False)ᵢ], or not, which means that
     [▷(P)ᵢ] implies [P]. For convenience, we also provide a tactic [index_case]
     that performs such an analysis. *)
 
@@ -247,9 +247,9 @@ Local Ltac index_case_named HF :=
 (* ------------------------------------------------------------------------- *)
 (** *** Löb Induction *)
 
-(** The key feature of step-indexed logic with later modality is an induction
+(** The key feature of step-indexed logic with later modality is induction
 over step-indices, called Löb induction. When the goal is [w ⊨ φ], these
-tactics introduces an assumption [w ⊨ ▷ φ]. The name of this assumption can
+tactics introduce an assumption [w ⊨ ▷ φ]. The name of this assumption can
 be provided as a parameter for [loeb_induction] tactic. If [loeb_induction]
 is used without a name, the default name [IH] is used. *)
 Tactic Notation "loeb_induction" := loeb_induction_anon.
@@ -260,11 +260,11 @@ Tactic Notation "loeb_induction" ident(H) := loeb_induction_named H.
 
 (** When the world structure implements an instance of [IWorldBottomDec], we
 can perform an analysis on the step-index by using [index_case] tactic. The
-tactic creates two subgoals. The first subgoal corresponds to the situation,
-that there is no future world with lower step-index, so we get additional
+tactic creates two subgoals. The first subgoal corresponds to the situation
+when there is no future world with lower step-index, so we get additional
 assumption [w ⊨ ▷(False)ᵢ]. The optional parameter to the tactic is the name
 of this assumption (the default name is [HFalse]). Since from false we can
-prove everything, all assumptions of the form [w ⊨ ▷(φ)] are cleared. In the
+deduce anything, all assumptions of the form [w ⊨ ▷(φ)] are cleared. In the
 second subgoal, all assumptions of the form [w ⊨ ▷(φ)ᵢ] are changed to [φ]. *)
 
 Tactic Notation "index_case" :=
