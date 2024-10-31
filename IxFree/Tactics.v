@@ -243,13 +243,12 @@ Local Ltac is_later H :=
 Local Ltac goal_is_later :=
   refine (_ : _ ⊨ ▷ _).
 
-(** Assuming that [Hord] has type [W ⊑ w'], and [Hidx] has type
-  [world_index w' < world_index w] it changes all assumptions of the
+(** Assuming that [Hord] has type [W ⊏↓ w'] it changes all assumptions of the
   form [W ⊨ ▷ φ] into [w' ⊨ φ]. *)
-Local Ltac move_later_assumptions W Hord Hidx :=
+Local Ltac move_later_assumptions W Hord :=
   repeat match goal with
   | [ H: W ⊨ ▷ ?P |- _ ] =>
-    apply (I_later_elim P Hord Hidx) in H
+    apply (I_later_elim P Hord) in H
   end.
 
 (** Introduce a later. It changes goal of the form [w ⊨ ▷ φ] into [w ⊨ φ],
@@ -259,23 +258,11 @@ Local Ltac iintro_later :=
   name_worlds ltac:(fun W_old W_new =>
     refine (I_later_intro _ _);
     let Hord := fresh "Hord" in
-    let Hidx := fresh "Hidx" in
-    intros W_new Hord Hidx;
-    move_later_assumptions W_old Hord Hidx;
-    move_assumptions W_old Hord;
-    try clear W_old Hord Hidx
+    intros W_new Hord;
+    move_later_assumptions W_old Hord;
+    move_assumptions W_old (proj1 Hord);
+    try clear W_old Hord
   ).
-
-Local Ltac loeb_induction_named IH :=
-  match goal with
-  | [ |- _ ⊨ ?P ] =>
-    apply (I_loeb_induction P);
-    iintro_arrow_named IH
-  end.
-
-Local Ltac loeb_induction_anon :=
-  let IH := fresh "IH" in
-  loeb_induction_named IH.
 
 (* ------------------------------------------------------------------------- *)
 (** *** Introduction rules *)
@@ -691,14 +678,3 @@ Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) uconstr(t3)
   ispecialize_one H t5 ltac:(
   ispecialize_one H t6 ltac:(
   ispecialize_one H t7 idtac)))))).
-
-(* ========================================================================= *)
-(** ** Other tactics *)
-
-(** The key feature of step-indexed logic with later modality is an induction
-over step-indices, called Löb induction. When the goal is [w ⊨ φ], these
-tactics introduces an assumption [w ⊨ ▷ φ]. The name of this assumption can
-be provided as a parameter for [loeb_induction] tactic. If [loeb_induction]
-is used without a name, the default name [IH] is used. *)
-Tactic Notation "loeb_induction" := loeb_induction_anon.
-Tactic Notation "loeb_induction" ident(H) := loeb_induction_named H.

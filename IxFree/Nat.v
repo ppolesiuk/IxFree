@@ -36,3 +36,29 @@ Proof. split; simpl; auto. Qed.
 Notation IProp    := (WProp NatWorld).
 Notation IRel     := (WRel NatWorld).
 Notation IRel_sig := (WRel_sig NatWorld).
+
+#[export]
+Instance IWorldLiftCore_NatWorld : IWorldLiftCore NatWorld :=
+  { world_lift w := {| nw_index := S (nw_index w) |} }.
+
+#[export]
+Instance IWorldUnliftCore_NatWorld : IWorldUnliftCore NatWorld :=
+  { world_unlift w := {| nw_index := pred (nw_index w) |} }.
+
+#[export]
+Instance IWorldLift_NatWorld : IWorldLift NatWorld.
+Proof.
+  split.
+  + intros [ n ]; repeat constructor.
+  + intros [ n ] [ m ] [ _ Hidx ]; apply PeanoNat.lt_n_Sm_le; assumption.
+  + intros [ n ] [ m ] [ _ Hidx ]; exact Hidx.
+Qed.
+
+#[export]
+Instance IWorldUnlift_NatWorld : IWorldUnlift NatWorld.
+Proof.
+  split.
+  + intros [ n ] m H; split; simpl; [ apply Nat.le_pred_l | ].
+    apply Nat.lt_pred_l; intro Heq; subst; inversion H.
+  + intros [ n ] [ m ] [ _ Hidx ]; apply Nat.lt_le_pred; assumption.
+Qed.
