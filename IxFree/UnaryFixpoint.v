@@ -24,7 +24,15 @@ Context {IWC : IWorldCore W} {WC : IWorld W}.
   behind introducing large numbers is that if accessing the predecessor
   requires decreasing of a step-index, then large numbers are
   indistinguishable from infinite numbers. We will use this property to define
-  fixpoints of contractive functions. *)
+  fix-points of contractive functions.
+
+  Large numbers from this module are only the tool for proving the Banach
+  fixed-point theorem, and the user should not use them directly. The
+  [LargeNum] module provides a more convenient definition of large numbers,
+  that is defined in terms of guarded recursion and satisfies more properties.
+  In particular, the analog of the [I_large_S_intro] lemma would not hole in
+  general for the large numbers from this module, if not all world indices are
+  inhabited. *)
 
 Section LargeNums.
   Local Definition I_large_num_func n (w : W) : Prop := world_index w < n.
@@ -62,11 +70,11 @@ Section LargeNums.
   #[global] Opaque I_large_num.
 
   Lemma large_num_is_S {w : W} :
-    w ⊨ ∀ᵢ n, I_large_num n →ᵢ ∃ᵢ m, (n = S m)ᵢ ∧ᵢ ▷ I_large_num m.
+    w ⊨ ∀ᵢ n, I_large_num n →ᵢ ∃ᵢ m (EQ : n = S m), ▷ I_large_num m.
   Proof.
     iintros [ | n ] Hn.
     + exfalso; eapply large_num_Z; eassumption.
-    + iexists n; isplit; [ iintro; reflexivity | ].
+    + iexists n; iexists; [ reflexivity | ].
       iapply large_num_S; assumption.
   Qed.
 End LargeNums.
@@ -157,8 +165,7 @@ Section UFixpoint.
     iintro f_contr.
     idestruct (@large_num_exists w) as n Hn.
     iapply WRel1_equiv_trans; [ iapply I_fix1_n_equiv; eassumption | ].
-    iapply large_num_is_S in Hn; idestruct Hn as m Hnm Hm.
-    idestruct Hnm; subst; simpl.
+    iapply large_num_is_S in Hn; idestruct Hn as m Hnm Hm; subst; simpl.
     iapply f_contr.
     later_shift.
     iapply WRel1_equiv_symm; iapply I_fix1_n_equiv; assumption.

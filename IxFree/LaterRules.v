@@ -144,7 +144,7 @@ End Lift.
 (** ** Additional Laws That Relies on Existence of [world_unlift] *)
 
 Section Unlift.
-  Context {UCW : IWorldUnliftCore W} {LW : IWorldUnlift W}.
+  Context {UCW : IWorldUnliftCore W} {UW : IWorldUnlift W}.
 
   Lemma I_world_unlift_later (P : WProp W) {w : W} :
     (world_unlift w ⊨ P) → (w ⊨ ▷ P).
