@@ -9,9 +9,9 @@ Require Import IxFree.LaterRules.
 Require Import PeanoNat.
 
 (** * Large Numbers *)
-(** This module defines "large number" predicate. Intuitively, the number is
-  large, if it cannot cannot be distinguished from the infinity inside the
-  IxFree logic (assuming that decreasing the number requires moving to the
+(** This module defines the "large number" predicate. Intuitively, a number
+  is large if it cannot be distinguished from the infinity inside the
+  IxFree logic (assuming that decreasing the number requires moving to a
   later world). Large numbers are useful in defining complex recursive
   structures: they can be defined recursively on natural numbers, and for
   large numbers we get limit-like construction for free. For example, see
@@ -22,7 +22,7 @@ Section LargeNum.
 Context {W : Type} {PCW : PreOrderCore W} {PW : PreOrder W}.
 Context {IWC : IWorldCore W} {WC : IWorld W}.
 
-(** The number is large, if it is a successor of almost large number. *)
+(** The number is large if it is a successor of an almost large number. *)
 
 Fixpoint I_large (n : nat) : WProp W :=
   match n with

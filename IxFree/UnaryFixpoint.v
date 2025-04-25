@@ -10,9 +10,9 @@ Require Import IxFree.LargeNum.
 
 (** * Unary Fixpoints *)
 (** This module provides some helper definitions and lemmas needed to define
-  general recursive predicates. We use to define recursive unary predicates as
-  fixpoints of contractive functions. Unary predicates are functions from
-  some type to world-indexed propositions. *)
+  general recursive predicates. We use [LargeNum] to define recursive unary
+  predicates as fixpoints of contractive functions. Unary predicates are
+  functions from some type to world-indexed propositions. *)
 
 Import PreOrderNotations.
 
