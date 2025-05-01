@@ -692,46 +692,44 @@ Tactic Notation "ispecialize" hyp(H) uconstr(t1) uconstr(t2) uconstr(t3)
   ispecialize_one H t6 ltac:(
   ispecialize_one H t7 idtac)))))).
 
-Tactic Notation "igeneralize" constr(H) := igeneralize_one H.
+Tactic Notation "igeneralize" constr(H1) := igeneralize_one H1.
 Tactic Notation "igeneralize" constr(H1) constr(H2) :=
   igeneralize_one H2; igeneralize_one H1.
 Tactic Notation "igeneralize" constr(H1) constr(H2) constr(H3) :=
   igeneralize_one H3; igeneralize_one H2; igeneralize_one H1.
 Tactic Notation "igeneralize" constr(H1) constr(H2) constr(H3) constr(H4) :=
-  igeneralize_one H3; igeneralize_one H2; igeneralize_one H1;
-  igeneralize_one H4.
+  igeneralize_one H4; igeneralize_one H3; igeneralize_one H2;
+  igeneralize_one H1.
 Tactic Notation "igeneralize" constr(H1) constr(H2) constr(H3) constr(H4)
     constr(H5) :=
-  igeneralize_one H3; igeneralize_one H2; igeneralize_one H1;
-  igeneralize_one H4; igeneralize_one H5.
+  igeneralize_one H5; igeneralize_one H4; igeneralize_one H3;
+  igeneralize_one H2; igeneralize_one H1.
 Tactic Notation "igeneralize" constr(H1) constr(H2) constr(H3) constr(H4)
     constr(H5) constr(H6) :=
-  igeneralize_one H3; igeneralize_one H2; igeneralize_one H1;
-  igeneralize_one H4; igeneralize_one H5; igeneralize_one H6.
+  igeneralize_one H6; igeneralize_one H5; igeneralize_one H4;
+  igeneralize_one H3; igeneralize_one H2; igeneralize_one H1.
 Tactic Notation "igeneralize" constr(H1) constr(H2) constr(H3) constr(H4)
     constr(H5) constr(H6) constr(H7) :=
-  igeneralize_one H3; igeneralize_one H2; igeneralize_one H1;
-  igeneralize_one H4; igeneralize_one H5; igeneralize_one H6;
-  igeneralize_one H7.
+  igeneralize_one H7; igeneralize_one H6; igeneralize_one H5;
+  igeneralize_one H4; igeneralize_one H3; igeneralize_one H2;
+  igeneralize_one H1.
 
-Tactic Notation "irevert" constr(H) := irevert_one H.
+Tactic Notation "irevert" constr(H1) := irevert_one H1.
 Tactic Notation "irevert" constr(H1) constr(H2) :=
   irevert_one H2; irevert_one H1.
 Tactic Notation "irevert" constr(H1) constr(H2) constr(H3) :=
   irevert_one H3; irevert_one H2; irevert_one H1.
 Tactic Notation "irevert" constr(H1) constr(H2) constr(H3) constr(H4) :=
-  irevert_one H3; irevert_one H2; irevert_one H1;
-  irevert_one H4.
+  irevert_one H4; irevert_one H3; irevert_one H2; irevert_one H1.
 Tactic Notation "irevert" constr(H1) constr(H2) constr(H3) constr(H4)
     constr(H5) :=
-  irevert_one H3; irevert_one H2; irevert_one H1;
-  irevert_one H4; irevert_one H5.
+  irevert_one H5; irevert_one H4; irevert_one H3; irevert_one H2;
+  irevert_one H1.
 Tactic Notation "irevert" constr(H1) constr(H2) constr(H3) constr(H4)
     constr(H5) constr(H6) :=
-  irevert_one H3; irevert_one H2; irevert_one H1;
-  irevert_one H4; irevert_one H5; irevert_one H6.
+  irevert_one H6; irevert_one H5; irevert_one H4; irevert_one H3;
+  irevert_one H2; irevert_one H1.
 Tactic Notation "irevert" constr(H1) constr(H2) constr(H3) constr(H4)
     constr(H5) constr(H6) constr(H7) :=
-  irevert_one H3; irevert_one H2; irevert_one H1;
-  irevert_one H4; irevert_one H5; irevert_one H6;
-  irevert_one H7.
+  irevert_one H7; irevert_one H6; irevert_one H5; irevert_one H4;
+  irevert_one H3; irevert_one H2; irevert_one H1.
