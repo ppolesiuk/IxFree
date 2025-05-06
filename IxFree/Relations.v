@@ -12,28 +12,35 @@ Require Import IxFree.UnaryFixpoint.
 (** ** Relation Signatures *)
 
 (** Relations are just functions with [WProp _] as codomain. We have a separate
-  datatype for representation of relations signatures, with the two
-  constructors: [WRel W], which should be used instead od [WProp W], and
-  [A ⇒ᵢ Σ], which represents a function from type [A] to another signature [Σ]
-  ([WRel W] or another arrow). *)
+  datatype for representation of signatures of relations. This type has three
+  constructors: [WRel W], which should be used instead of [WProp W], [T ⇒ᵢ Σ],
+  which represents a function from type [T] to another signature [Σ], and
+  [Πᵢ x : T, Σ], which represents a dependent function. *)
 
 Inductive WRel_sig' (WPr : Type) : Type :=
-| WRel_base  : WRel_sig' WPr
-| WRel_arrow : Type → WRel_sig' WPr → WRel_sig' WPr
+| WRel_base
+| WRel_arrow (T : Type) (Σ : WRel_sig' WPr)
+| WRel_forall (T : Type) (Σ : T → WRel_sig' WPr)
 .
 
 Notation WRel_sig W := (WRel_sig' (WProp W)).
 Notation WRel W := (WRel_base (WProp W)).
 
-Arguments WRel_arrow {WPr} _ _.
+Arguments WRel_arrow {WPr} T Σ.
+Arguments WRel_forall {WPr} T Σ.
 Notation "T ⇒ᵢ Σ" := (WRel_arrow T Σ) (at level 99, Σ at level 200).
+Notation "'Πᵢ' x .. y , Σ" :=
+  (WRel_forall _ (fun x => .. (WRel_forall _ (fun y => Σ)) .. ))
+  (at level 99, x binder, y binder, Σ at level 200,
+  format "'[ ' '[ ' Πᵢ x .. y ']' , '/' Σ ']'").
 
 (** Relations signatures can be implicitly coerced to regular Coq types. *)
 
 Fixpoint WRel_type {W} (Σ : WRel_sig' W) : Type :=
   match Σ with
-  | WRel_base _ => W
-  | T ⇒ᵢ Σ      => T → WRel_type Σ
+  | WRel_base _     => W
+  | T ⇒ᵢ Σ          => T → WRel_type Σ
+  | WRel_forall T Σ => ∀ x : T, WRel_type (Σ x)
   end.
 
 Coercion WRel_type : WRel_sig >-> Sortclass.
@@ -46,20 +53,23 @@ Section WRelRelations.
 
   Fixpoint WRel_equiv (Σ : WRel_sig W) : Σ → Σ → WProp W :=
     match Σ return Σ → Σ → WProp W with
-    | WRel_base _ => λ R₁ R₂, R₁ ↔ᵢ R₂
-    | T ⇒ᵢ Σ      => λ R₁ R₂, ∀ᵢ x : T, WRel_equiv Σ (R₁ x) (R₂ x)
+    | WRel_base _     => λ R₁ R₂, R₁ ↔ᵢ R₂
+    | T ⇒ᵢ Σ          => λ R₁ R₂, ∀ᵢ x : T, WRel_equiv Σ (R₁ x) (R₂ x)
+    | WRel_forall T Σ => λ R₁ R₂, ∀ᵢ x : T, WRel_equiv (Σ x) (R₁ x) (R₂ x)
     end.
 
   Fixpoint WRel_subrel (Σ : WRel_sig W) : Σ → Σ → WProp W :=
     match Σ return Σ → Σ → WProp W with
-    | WRel_base _ => λ R₁ R₂, R₁ →ᵢ R₂
-    | T ⇒ᵢ Σ      => λ R₁ R₂, ∀ᵢ x : T, WRel_subrel Σ (R₁ x) (R₂ x)
+    | WRel_base _     => λ R₁ R₂, R₁ →ᵢ R₂
+    | T ⇒ᵢ Σ          => λ R₁ R₂, ∀ᵢ x : T, WRel_subrel Σ (R₁ x) (R₂ x)
+    | WRel_forall T Σ => λ R₁ R₂, ∀ᵢ x : T, WRel_subrel (Σ x) (R₁ x) (R₂ x)
     end.
 
   Fixpoint WRel_later (Σ : WRel_sig W) : Σ → Σ :=
     match Σ return Σ → Σ with
-    | WRel_base _ => λ R, ▷ R
-    | T ⇒ᵢ Σ      => λ R x, WRel_later Σ (R x)
+    | WRel_base _     => λ R, ▷ R
+    | T ⇒ᵢ Σ          => λ R x, WRel_later Σ (R x)
+    | WRel_forall T Σ => λ R x, WRel_later (Σ x) (R x)
     end.
 End WRelRelations.
 
@@ -74,57 +84,67 @@ Section WRelRelations.
   Lemma WRel_equiv_refl (Σ : WRel_sig W) (R : Σ) (w : W) :
     w ⊨ R ≈ᵢ R.
   Proof.
-    revert w; induction Σ; intro w; simpl.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ]; intro w; simpl.
     + isplit; iintro H; assumption.
+    + iintro x; iapply IHΣ.
     + iintro x; iapply IHΣ.
   Qed.
 
   Lemma WRel_equiv_symm (Σ : WRel_sig W) (R S : Σ) (w : W) :
     w ⊨ R ≈ᵢ S →ᵢ S ≈ᵢ R.
   Proof.
-    revert w; induction Σ; intro w; simpl; iintro H.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ]; intro w; simpl; iintro H.
     + isplit; iintro H'; iapply H; assumption.
+    + iintro x; iapply IHΣ; iapply H.
     + iintro x; iapply IHΣ; iapply H.
   Qed.
 
   Lemma WRel_equiv_trans (Σ : WRel_sig W) (R S T : Σ) (w : W) :
     w ⊨ R ≈ᵢ S →ᵢ S ≈ᵢ T →ᵢ R ≈ᵢ T.
   Proof.
-    revert w; induction Σ; intro w; simpl; iintros H1 H2.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      intro w; simpl; iintros H1 H2.
     + isplit; iintro H; [ iapply H2; iapply H1 | iapply H1; iapply H2 ];
         assumption.
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
     + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
   Qed.
 
   Lemma WRel_sub_refl (Σ : WRel_sig W) (R : Σ) (w : W) :
     w ⊨ R ≾ᵢ R.
   Proof.
-    revert w; induction Σ; intro w; simpl.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ]; intro w; simpl.
     + iintro H; assumption.
+    + iintro x; iapply IHΣ.
     + iintro x; iapply IHΣ.
   Qed.
 
   Lemma WRel_sub_trans (Σ : WRel_sig W) (R S T : Σ) (w : W) :
     w ⊨ R ≾ᵢ S →ᵢ S ≾ᵢ T →ᵢ R ≾ᵢ T.
   Proof.
-    revert w; induction Σ; intro w; simpl; iintros H1 H2.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      intro w; simpl; iintros H1 H2.
     + iintro H; iapply H2; iapply H1; assumption.
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
     + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
   Qed.
 
   Lemma WRel_equiv_sub (Σ : WRel_sig W) (R S : Σ) (w : W) :
     w ⊨ R ≈ᵢ S →ᵢ R ≾ᵢ S.
   Proof.
-    revert w; induction Σ; intro w; simpl.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ]; intro w; simpl.
     + iintro H; iapply H.
+    + iintros H x; iapply IHΣ; iapply H.
     + iintros H x; iapply IHΣ; iapply H.
   Qed.
 
   Lemma WRel_sub_equiv (Σ : WRel_sig W) (R S : Σ) (w : W) :
     w ⊨ R ≾ᵢ S →ᵢ S ≾ᵢ R →ᵢ R ≈ᵢ S.
   Proof.
-    revert w; induction Σ; intro w; simpl; iintros H1 H2.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      intro w; simpl; iintros H1 H2.
     + isplit; assumption.
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
     + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
   Qed.
 End WRelRelations.
@@ -167,38 +187,47 @@ Section WRelFix.
 
   Local Fixpoint WRel_prod (Σ : WRel_sig W) : Type :=
     match Σ with
-    | WRel_base _ => unit
-    | T ⇒ᵢ Σ => (T * WRel_prod Σ)%type
+    | WRel_base _     => unit
+    | T ⇒ᵢ Σ          => (T * WRel_prod Σ)%type
+    | WRel_forall T Σ => { x : T & WRel_prod (Σ x) }
     end.
 
   Local Fixpoint WRel_curry (Σ : WRel_sig W) : WRel1 (WRel_prod Σ) → Σ :=
     match Σ return WRel1 (WRel_prod Σ) → Σ with
-    | WRel_base _ => λ R, R tt
-    | T ⇒ᵢ Σ      => λ R x, WRel_curry Σ (λ y, R (x, y))
+    | WRel_base _     => λ R, R tt
+    | T ⇒ᵢ Σ          => λ R x, WRel_curry Σ (λ y, R (x, y))
+    | WRel_forall T Σ => λ R x, WRel_curry (Σ x) (λ y, R (existT _ x y))
     end.
 
   Local Fixpoint WRel_uncurry (Σ : WRel_sig W) : Σ → WRel1 (WRel_prod Σ) :=
     match Σ return Σ → WRel1 (WRel_prod Σ) with
-    | WRel_base _ => λ R _, R
-    | T ⇒ᵢ Σ      => λ R p, WRel_uncurry Σ (R (fst p)) (snd p)
+    | WRel_base _     => λ R _, R
+    | T ⇒ᵢ Σ          => λ R p, WRel_uncurry Σ (R (fst p)) (snd p)
+    | WRel_forall T Σ => λ R p, WRel_uncurry (Σ _) (R (projT1 p)) (projT2 p)
     end.
 
   Local Lemma WRel_equiv_move_curry (Σ : WRel_sig W) (w : W) :
     w ⊨ ∀ᵢ R₁ R₂,
       WRel1_equiv R₁ (WRel_uncurry Σ R₂) →ᵢ WRel_curry Σ R₁ ≈ᵢ R₂.
   Proof.
-    revert w; induction Σ; simpl; intro w; iintros R₁ R₂ HR.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      simpl; intro w; iintros R₁ R₂ HR.
     + iapply HR.
     + iintro x; iapply IHΣ.
       iintro y; ispecialize HR (x, y); assumption.
+    + iintro x; iapply IHΣ.
+      iintro y; ispecialize HR (existT _ x y); assumption.
   Qed.
 
   Local Lemma WRel_curry_equiv (Σ : WRel_sig W) (w : W) :
     w ⊨ ∀ᵢ R₁ R₂,
       WRel1_equiv R₁ R₂ →ᵢ WRel_curry Σ R₁ ≈ᵢ WRel_curry Σ R₂.
   Proof.
-    revert w; induction Σ; simpl; intro w; iintros R₁ R₂ HR.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ]; simpl;
+      intro w; iintros R₁ R₂ HR.
     + iapply HR.
+    + iintro x; iapply IHΣ.
+      iintro y; iapply HR.
     + iintro x; iapply IHΣ.
       iintro y; iapply HR.
   Qed.
@@ -207,8 +236,10 @@ Section WRelFix.
     w ⊨ ∀ᵢ R₁ R₂,
       R₁ ≈ᵢ R₂ →ᵢ WRel1_equiv (WRel_uncurry Σ R₁) (WRel_uncurry Σ R₂).
   Proof.
-    revert w; induction Σ; simpl; intro w; iintros R₁ R₂ HR x.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ]; simpl;
+      intro w; iintros R₁ R₂ HR x.
     + assumption.
+    + iapply IHΣ; iapply HR.
     + iapply IHΣ; iapply HR.
   Qed.
 
