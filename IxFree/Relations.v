@@ -71,11 +71,19 @@ Section WRelRelations.
     | T ⇒ᵢ Σ          => λ R x, WRel_later Σ (R x)
     | WRel_forall T Σ => λ R x, WRel_later (Σ x) (R x)
     end.
+
+  Fixpoint WRel_inter (Σ : WRel_sig W) : Σ → Σ → Σ :=
+    match Σ return Σ → Σ → Σ with
+    | WRel_base _     => λ R₁ R₂, R₁ ∧ᵢ R₂
+    | T ⇒ᵢ Σ          => λ R₁ R₂ x, WRel_inter Σ (R₁ x) (R₂ x)
+    | WRel_forall T Σ => λ R₁ R₂ x, WRel_inter (Σ x) (R₁ x) (R₂ x)
+    end.
 End WRelRelations.
 
 Notation "R ≈ᵢ S" := (WRel_equiv _ R S) (at level 70).
 Notation "R ≾ᵢ S" := (WRel_subrel _ R S) (at level 70).
 Notation "▶ R" := (WRel_later _ R) (at level 30).
+Notation "R ∩ᵢ S" := (WRel_inter _ R S) (at level 40).
 
 Section WRelRelations.
   Context {W : Type} {PCW : PreOrderCore W} {PW : PreOrder W}.
@@ -147,6 +155,16 @@ Section WRelRelations.
     + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
     + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
   Qed.
+
+  Lemma WRel_sub_inter (Σ : WRel_sig W) (R R₁ R₂ : Σ) (w : W) :
+    w ⊨ R ≾ᵢ R₁ →ᵢ R ≾ᵢ R₂ →ᵢ R ≾ᵢ (R₁ ∩ᵢ R₂).
+  Proof.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      intro w; simpl; iintros H1 H2.
+    + iintro; isplit; [ iapply H1 | iapply H2 ]; assumption.
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
+    + iintro x; iapply IHΣ; [ iapply H1 | iapply H2 ].
+  Qed.
 End WRelRelations.
 
 (** ** Fixpoints *)
@@ -163,6 +181,9 @@ Section WRelFix.
 
   (** A function is contractive if it maps almost equivalent relations
   (this "almost" is expressed by later) to more equivalent ones. *)
+
+  Definition I_monotone {Σ Δ : WRel_sig W} (f : Σ → Δ) : WProp W :=
+    ∀ᵢ R₁ R₂, R₁ ≾ᵢ R₂ →ᵢ f R₁ ≾ᵢ f R₂.
 
   Definition I_contractive {Σ Δ : WRel_sig W} (f : Σ → Δ) : WProp W :=
     ∀ᵢ R₁ R₂, ▷(R₁ ≈ᵢ R₂) →ᵢ f R₁ ≈ᵢ f R₂.
@@ -205,6 +226,43 @@ Section WRelFix.
     | T ⇒ᵢ Σ          => λ R p, WRel_uncurry Σ (R (fst p)) (snd p)
     | WRel_forall T Σ => λ R p, WRel_uncurry (Σ _) (R (projT1 p)) (projT2 p)
     end.
+
+  Local Lemma WRel_sub_move_curry (Σ : WRel_sig W) (w : W) :
+    w ⊨ ∀ᵢ R₁ R₂,
+      WRel1_sub R₁ (WRel_uncurry Σ R₂) →ᵢ WRel_curry Σ R₁ ≾ᵢ R₂.
+  Proof.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      simpl; intro w; iintros R₁ R₂ HR.
+    + iapply HR.
+    + iintro x; iapply IHΣ.
+      iintro y; ispecialize HR (x, y); assumption.
+    + iintro x; iapply IHΣ.
+      iintro y; ispecialize HR (existT _ x y); assumption.
+  Qed.
+
+  Local Lemma WRel_curry_sub (Σ : WRel_sig W) (w : W) :
+    w ⊨ ∀ᵢ R₁ R₂,
+      WRel1_sub R₁ R₂ →ᵢ WRel_curry Σ R₁ ≾ᵢ WRel_curry Σ R₂.
+  Proof.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      simpl; intro w; iintros R₁ R₂ HR.
+    + iapply HR.
+    + iintro x; iapply IHΣ.
+      iintro y; iapply HR.
+    + iintro x; iapply IHΣ.
+      iintro y; iapply HR.
+  Qed.
+
+  Local Lemma WRel_uncurry_sub (Σ : WRel_sig W) (w : W) :
+    w ⊨ ∀ᵢ R₁ R₂,
+      R₁ ≾ᵢ R₂ →ᵢ WRel1_sub (WRel_uncurry Σ R₁) (WRel_uncurry Σ R₂).
+  Proof.
+    revert w; induction Σ as [ | ? ? IHΣ | ? ? IHΣ ];
+      simpl; intro w; iintros R₁ R₂ HR x.
+    + assumption.
+    + iapply IHΣ; iapply HR.
+    + iapply IHΣ; iapply HR.
+  Qed.
 
   Local Lemma WRel_equiv_move_curry (Σ : WRel_sig W) (w : W) :
     w ⊨ ∀ᵢ R₁ R₂,
@@ -281,4 +339,61 @@ Section WRelFix.
     iapply WRel_equiv_sub; iapply WRel_equiv_symm.
     iapply I_fix_is_fixpoint; assumption.
   Qed.
+
+  Definition K_fix {Σ : WRel_sig W} (f : Σ → Σ) : Σ :=
+    WRel_curry Σ (K_fix1 (λ R, WRel_uncurry Σ (f (WRel_curry Σ R)))).
+
+  Local Lemma I_monotone_curry (Σ : WRel_sig W) (f : Σ → Σ) {w : W} :
+    w ⊨ I_monotone f →ᵢ I_monotone1 (λ R, WRel_uncurry Σ (f (WRel_curry Σ R))).
+  Proof.
+    iintros f_mon R₁ R₂ HR.
+    iapply WRel_uncurry_sub.
+    iapply f_mon.
+    iapply WRel_curry_sub; assumption.
+  Qed.
+
+  Lemma K_fix_is_fixpoint (Σ : WRel_sig W) (f : Σ → Σ) {w : W} :
+    w ⊨ I_monotone f →ᵢ K_fix f ≈ᵢ f (K_fix f).
+  Proof.
+    iintro f_mon.
+    iapply WRel_equiv_move_curry.
+    iapply K_fix1_is_fixpoint.
+    iapply I_monotone_curry; assumption.
+  Qed.
+
+  Lemma K_fix_unroll (Σ : WRel_sig W) (f : Σ → Σ) {w : W} :
+    w ⊨ I_monotone f →
+    w ⊨ K_fix f ≾ᵢ f (K_fix f).
+  Proof.
+    intro f_mon.
+    iapply WRel_equiv_sub; iapply K_fix_is_fixpoint; assumption.
+  Qed.
+
+  Lemma K_fix_roll (Σ : WRel_sig W) (f : Σ → Σ) {w : W} :
+    w ⊨ I_monotone f →
+    w ⊨ f (K_fix f) ≾ᵢ K_fix f.
+  Proof.
+    intro f_mon.
+    iapply WRel_equiv_sub; iapply WRel_equiv_symm.
+    iapply K_fix_is_fixpoint; assumption.
+  Qed.
+
+  Lemma K_fix_ind (Σ : WRel_sig W) (f : Σ → Σ) (P : Σ) {w : W} :
+    w ⊨ I_monotone f →
+    w ⊨ f (K_fix f ∩ᵢ P) ≾ᵢ P →
+    w ⊨ K_fix f ≾ᵢ P.
+  Proof.
+    intros f_mon HP.
+    iapply WRel_sub_move_curry.
+    iapply K_fix1_ind; [ iapply I_monotone_curry; assumption | ].
+    iapply WRel_uncurry_sub.
+    iapply WRel_sub_trans; [ | eassumption ].
+    iapply f_mon.
+    iapply WRel_sub_inter.
+    + iapply WRel_curry_sub; iintros x H; iapply H.
+    + iapply WRel_sub_move_curry; iintros x H.
+      idestruct H; assumption.
+  Qed.
+
+  #[global] Opaque K_fix.
 End WRelFix.

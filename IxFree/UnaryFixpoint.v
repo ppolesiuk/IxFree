@@ -28,10 +28,19 @@ Context {A : Type} (f : WRel1 A → WRel1 A).
 (** We define equivalence of unary predicates as a pointwise world-indexed
   equivalence. Note that this definition is a world-indexed predicate, so
   we can use later operator to say that two predicates are almost
-  equivalent [(▷WRel1_equiv R₁ R₂)].  *)
+  equivalent [(▷WRel1_equiv R₁ R₂)]. *)
+
+Definition WRel1_sub (R₁ R₂ : WRel1 A) : WProp W :=
+  ∀ᵢ x, R₁ x →ᵢ R₂ x.
 
 Definition WRel1_equiv (R₁ R₂ : WRel1 A) : WProp W :=
   ∀ᵢ x, R₁ x ↔ᵢ R₂ x.
+
+Lemma WRel1_sub_refl w R :
+  w ⊨ WRel1_sub R R.
+Proof.
+  iintros x Hx; assumption.
+Qed.
 
 Lemma WRel1_equiv_symm w R₁ R₂ :
   w ⊨ WRel1_equiv R₁ R₂ →ᵢ WRel1_equiv R₂ R₁.
@@ -50,6 +59,9 @@ Qed.
 (** We say that function is contractive if it maps almost equivalent
   predicates to equivalent predicates. Contractive functions have
   a fixpoint. *)
+
+Definition I_monotone1 : WProp W :=
+  ∀ᵢ R₁ R₂, WRel1_sub R₁ R₂ →ᵢ WRel1_sub (f R₁) (f R₂).
 
 Definition I_contractive1 : WProp W :=
   ∀ᵢ R₁ R₂, ▷ WRel1_equiv R₁ R₂ →ᵢ WRel1_equiv (f R₁) (f R₂).
@@ -119,5 +131,51 @@ Lemma I_fix1_roll (w : W) x :
 Proof.
   iintro f_contr; iapply I_fix1_is_fixpoint; assumption.
 Qed.
+
+Section KnasterTarski.
+  Definition K_fix1 : WRel1 A :=
+    λ x, ∀ᵢ R, WRel1_sub (f R) R →ᵢ R x.
+
+  Lemma K_fix1_roll (w : W) x :
+    w ⊨ I_monotone1 →ᵢ f K_fix1 x →ᵢ K_fix1 x.
+  Proof.
+    iintros f_mon Hx R HR.
+    iapply HR; iapply f_mon; [ | eassumption ].
+    iintros y Hy; iapply Hy; assumption.
+  Qed.
+
+  Lemma K_fix1_unroll (w : W) x :
+    w ⊨ I_monotone1 →ᵢ K_fix1 x →ᵢ f K_fix1 x.
+  Proof.
+    iintros f_mon Hx.
+    iapply Hx; iapply f_mon.
+    iintro; iapply K_fix1_roll; assumption.
+  Qed.
+
+  Lemma K_fix1_ind (P : A → WProp W) (w : W) :
+    w ⊨ I_monotone1 →
+    w ⊨ WRel1_sub (f (λ x, K_fix1 x ∧ᵢ P x)) P →
+    w ⊨ WRel1_sub K_fix1 P.
+  Proof.
+    intros f_mon H; iintros x Hx.
+    apply I_forall_elim with (x := λ x, K_fix1 x ∧ᵢ P x) in Hx.
+    eapply I_conj_elim2; iapply Hx; clear x Hx.
+    iintros x Hx; isplit.
+    + iapply K_fix1_roll; [ assumption | ].
+      iapply f_mon; [ | eassumption ].
+      iintros y Hy; iapply Hy.
+    + iapply H; assumption.
+  Qed.
+
+  #[global] Opaque K_fix1.
+
+  Lemma K_fix1_is_fixpoint {w : W} :
+    w ⊨ I_monotone1 →ᵢ WRel1_equiv K_fix1 (f K_fix1).
+  Proof.
+    iintros f_mon x; isplit.
+    + iapply K_fix1_unroll; assumption.
+    + iapply K_fix1_roll; assumption.
+  Qed.
+End KnasterTarski.
 
 End UnaryFixpoint.
