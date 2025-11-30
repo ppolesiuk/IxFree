@@ -33,6 +33,10 @@ jobs:
             opam exec -- rocq --version
             endGroup
 
+            startGroup "Install coqc if needed"
+            command -v coqc || opam install --confirm-level=unsafe-yes -j 2 coq.${{ matrix.coq_version }}
+            endGroup
+
             startGroup "Build project"
             dune build
             endGroup
