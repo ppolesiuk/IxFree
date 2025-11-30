@@ -1,9 +1,9 @@
 (* This file is part of IxFree, released under MIT license.
  * See LICENSE for details.
  *)
-Require Import Utf8.
-Require Import RelationClasses.
-Require Import Decidable PeanoNat.
+From Stdlib Require Import Utf8.
+From Stdlib Require Import RelationClasses.
+From Stdlib Require Import Decidable PeanoNat.
 
 (** * Base Definitions *)
 
