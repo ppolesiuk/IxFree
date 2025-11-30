@@ -22,11 +22,10 @@ jobs:
         with:
           coq_version: ${{ matrix.coq_version }}
           ocaml_version: default
-          before_script: |
+          custom_script: |
             startGroup "Fix permissions"
             sudo chown -R coq:coq .
             endGroup
-          custom_script: |
             startGroup "Build project"
             dune build
             endGroup
