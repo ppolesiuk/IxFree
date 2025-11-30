@@ -1,7 +1,7 @@
 (* This file is part of IxFree, released under MIT license.
  * See LICENSE for details.
  *)
-Require Import Utf8.
+From Stdlib Require Import Utf8.
 Require Import IxFree.Base.
 Require Import IxFree.Connectives.
 Require Import IxFree.Tactics.
