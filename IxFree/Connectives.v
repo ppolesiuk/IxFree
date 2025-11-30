@@ -1,9 +1,9 @@
 (* This file is part of IxFree, released under MIT license.
  * See LICENSE for details.
  *)
-Require Import Utf8.
+From Stdlib Require Import Utf8.
+From Stdlib Require Import PeanoNat.
 Require Import IxFree.Base.
-Require Import PeanoNat.
 
 Import PreOrderNotations.
 

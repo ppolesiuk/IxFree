@@ -7,9 +7,9 @@ step-indexed logical relations.
 Requirements
 ------------
 
-IxFree is tested to work with Coq version 8.19.1 and does not depend on any
+IxFree is tested to work with Coq version 9.1.0 and does not depend on any
 third-party library. It is recommended to build IxFree using dune build system
-(tested with version 3.15.0) and install it by opam.
+(tested with version 3.20.2) and install it by opam.
 
 Installation
 ------------

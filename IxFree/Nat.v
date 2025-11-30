@@ -1,10 +1,10 @@
 (* This file is part of IxFree, released under MIT license.
  * See LICENSE for details.
  *)
-Require Import Utf8.
+From Stdlib Require Import Utf8.
+From Stdlib Require Import PeanoNat.
 Require Import IxFree.Base.
 Require Import IxFree.Relations.
-Require Import PeanoNat.
 
 (** * Natural Step-Indexed Kripke Model *)
 (** This module provides the definition of the standard step-indexed Kripke

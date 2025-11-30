@@ -2,4 +2,5 @@
 (coq.theory
   (name IxFree)
   (package ixfree)
+  (theories Stdlib)
   (coqdoc_flags -utf8 -g))
