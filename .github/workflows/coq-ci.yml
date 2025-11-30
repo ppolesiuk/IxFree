@@ -24,7 +24,7 @@ jobs:
           ocaml_version: default
           custom_script: |
             startGroup "Fix permissions"
-            sudo chown -R coq:coq .
+            sudo chown -R 1000:1000 .
             endGroup
             startGroup "Build project"
             dune build
