@@ -24,13 +24,13 @@ jobs:
           ocaml_version: default
           custom_script: |
             startGroup "Fix permissions"
-            sudo chown -R 1000:1000 .
+            sudo chown -R rocq:rocq .
             endGroup
 
             startGroup "Print versions"
             opam --version
             opam exec -- dune --version
-            opam exec -- coqc --version || opam exec -- rocq --version
+            opam exec -- rocq --version
             endGroup
 
             startGroup "Build project"
