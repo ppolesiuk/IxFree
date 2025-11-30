@@ -26,6 +26,13 @@ jobs:
             startGroup "Fix permissions"
             sudo chown -R 1000:1000 .
             endGroup
+
+            startGroup "Print versions"
+            opam --version
+            opam exec -- dune --version
+            opam exec -- coqc --version || opam exec -- rocq --version
+            endGroup
+
             startGroup "Build project"
             dune build
             endGroup
