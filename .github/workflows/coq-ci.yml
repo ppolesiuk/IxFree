@@ -24,7 +24,7 @@ jobs:
           ocaml_version: default
           before_script: |
             startGroup "Fix permissions"
-            sudo chown -R coq:coq
+            sudo chown -R coq:coq .
             endGroup
           custom_script: |
             startGroup "Build project"
