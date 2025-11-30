@@ -24,19 +24,23 @@ jobs:
           ocaml_version: default
           custom_script: |
             startGroup "Fix permissions"
-            sudo chown -R rocq:rocq .
-            endGroup
-
-            startGroup "Print versions"
-            opam --version
-            opam exec -- dune --version
-            opam exec -- rocq --version
+            sudo chown -R rocq:rocq .  || sudo chown -R coq:coq .
             endGroup
 
             startGroup "Install coqc if needed"
             command -v coqc || opam install --confirm-level=unsafe-yes -j 2 coq.${{ matrix.coq_version }}
             endGroup
 
-            startGroup "Build project"
-            dune build
+            startGroup "Print versions"
+            opam --version
+            opam exec -- dune --version
+            opam exec -- coqc --version
             endGroup
+
+            startGroup "Build project"
+            opam exec -- dune build
+            endGroup
+
+      - name: Revert permissions
+        if: ${{ always() }}
+        run: sudo chown -R 1001:116 .
