@@ -1,0 +1,46 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        coq_version:
+          - '9.1.0'
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up OCaml and Coq
+        uses: coq-community/docker-coq-action@v1
+        with:
+          coq_version: ${{ matrix.coq_version }}
+          ocaml_version: default
+          custom_script: |
+            startGroup "Fix permissions"
+            sudo chown -R rocq:rocq .  || sudo chown -R coq:coq .
+            endGroup
+
+            startGroup "Install coqc if needed"
+            command -v coqc || opam install --confirm-level=unsafe-yes -j 2 coq.${{ matrix.coq_version }}
+            endGroup
+
+            startGroup "Print versions"
+            opam --version
+            opam exec -- dune --version
+            opam exec -- coqc --version
+            endGroup
+
+            startGroup "Build project"
+            opam exec -- dune build
+            endGroup
+
+      - name: Revert permissions
+        if: ${{ always() }}
+        run: sudo chown -R 1001:116 .
